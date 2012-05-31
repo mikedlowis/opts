@@ -93,4 +93,7 @@ clean:
 	$(MAKE) -C tools/UnitTest++ clean
 	$(RM) $(SRC_OBJS)
 	$(RM) $(TEST_OBJS)
+	$(RM) $(SHARED_NAME)
+	$(RM) $(STATIC_NAME)
+	$(RM) $(TEST_RUNNER)*
 
