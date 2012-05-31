@@ -36,7 +36,9 @@ SRC_EXT    = c
 TEST_EXT   = cpp
 
 # Libraries to Link Against
-TEST_LIBS = tools/UnitTest++/libUnitTest++.a
+LIBS      =
+TEST_LIBS = $(LIBS) \
+            tools/UnitTest++/libUnitTest++.a
 
 # Source File Lists
 SRC_FILES  = $(call flist, $(SRC_ROOT), $(SRC_EXT))
@@ -48,32 +50,32 @@ TEST_OBJS = $(TEST_FILES:%.$(TEST_EXT)=%.o)
 
 # Include Directories
 INC_DIRS = $(call incdirs, $(SRC_ROOT)) \
-           $(call incdirs, deps/parse-utils/source) \
            $(call incdirs, tools/UnitTest++/src)
 
 # Compiler and Linker Options
 #----------------------------
-CXXFLAGS      = -c $(INC_DIRS) -Wall -Werror -fPIC
-TEST_CXXFLAGS = -c $(INC_DIRS) -Wall
+CXXFLAGS      = $(INC_DIRS) -Wall -fPIC
+TEST_CXXFLAGS = $(INC_DIRS) -Wall
+ARFLAGS       = rcs
 
 # Build Rules
 #------------
 all: release test
 
-release: $(PROJ_NAME)
+release: $(SHARED_NAME) $(STATIC_NAME)
 
 test: $(TEST_RUNNER)
 	./$(TEST_RUNNER)
 
 # Binaries
 $(SHARED_NAME): $(SRC_OBJS)
-	$(CXX) -o $@ $(SRC_OBJS) $(LIBS)
+	$(CXX) $(CXXFLAGS) -shared -o $@ $(SRC_OBJS) $(LIBS)
 
 $(STATIC_NAME): $(SRC_OBJS)
-	$(CXX) -o $@ $(SRC_OBJS) $(LIBS)
+	$(AR) $(ARFLAGS) -o $@ $(SRC_OBJS) $(LIBS)
 
 $(TEST_RUNNER): unit_test_pp $(SRC_OBJS) $(TEST_OBJS)
-	$(CXX) -o $@ $(SRC_OBJS) $(TEST_OBJS) $(TEST_LIBS)
+	$(CXX) $(TEST_CXXFLAGS) -o $@ $(SRC_OBJS) $(TEST_OBJS) $(TEST_LIBS)
 
 # Libraries
 unit_test_pp:
@@ -81,10 +83,10 @@ unit_test_pp:
 
 # Object Files
 $(SRC_OBJS): %.o : %.$(SRC_EXT)
-	$(CXX) $(CXXFLAGS) -o $@ $<
+	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 $(TEST_OBJS): %.o : %.$(TEST_EXT)
-	$(CXX) $(TEST_CXXFLAGS) -o $@ $<
+	$(CXX) -c $(TEST_CXXFLAGS) -o $@ $<
 
 # Cleanup
 clean:
