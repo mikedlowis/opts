@@ -18,6 +18,13 @@ dlist = $(shell env find $(1) -type d -print)
 # Function for generating an include list
 incdirs = $(addprefix -I, $(call dlist, $(1)))
 
+# Function for generating file dependencies
+define make-depend
+  $(CXX) $(CXXFLAGS) -M $1 | \
+  sed -e 's,\($(notdir $2)\) *:,$(dir $2)\1 $(subst .o,.d,$2): ,' \
+  > $(subst .o,.d,$2)
+endef
+
 # Project and Artifact Names
 #---------------------------
 PROJ_NAME   = opts
@@ -48,6 +55,10 @@ TEST_FILES = $(call flist, $(TESTS_ROOT), $(TEST_EXT))
 SRC_OBJS  = $(SRC_FILES:%.$(SRC_EXT)=%.o)
 TEST_OBJS = $(TEST_FILES:%.$(TEST_EXT)=%.o)
 
+# Dependecy File Lists
+SRC_DEPS  = $(SRC_OBJS:%.o=%.d)
+TEST_DEPS = $(TEST_OBJS:%.o=%.d)
+
 # Include Directories
 INC_DIRS = $(call incdirs, $(SRC_ROOT)) \
            $(call incdirs, tools/UnitTest++/src)
@@ -67,6 +78,9 @@ release: $(SHARED_NAME) $(STATIC_NAME)
 test: $(TEST_RUNNER)
 	./$(TEST_RUNNER)
 
+foo:
+	echo $(SRC_DEPS)
+
 # Binaries
 $(SHARED_NAME): $(SRC_OBJS)
 	$(CXX) $(CXXFLAGS) -shared -o $@ $(SRC_OBJS) $(LIBS)
@@ -83,17 +97,21 @@ unit_test_pp:
 
 # Object Files
 $(SRC_OBJS): %.o : %.$(SRC_EXT)
+	@$(call make-depend,$<,$@)
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 
 $(TEST_OBJS): %.o : %.$(TEST_EXT)
+	@$(call make-depend,$<,$@)
 	$(CXX) -c $(TEST_CXXFLAGS) -o $@ $<
 
 # Cleanup
 clean:
-	$(MAKE) -C tools/UnitTest++ clean
-	$(RM) $(SRC_OBJS)
-	$(RM) $(TEST_OBJS)
-	$(RM) $(SHARED_NAME)
-	$(RM) $(STATIC_NAME)
-	$(RM) $(TEST_RUNNER)*
+	@$(MAKE) -C tools/UnitTest++ clean
+	@$(RM) $(SRC_OBJS)
+	@$(RM) $(TEST_OBJS)
+	@$(RM) $(SRC_DEPS)
+	@$(RM) $(TEST_DEPS)
+	@$(RM) $(SHARED_NAME)
+	@$(RM) $(STATIC_NAME)
+	@$(RM) $(TEST_RUNNER)*
 
