@@ -1,0 +1,9 @@
+build/*
+tags
+cscope.out
+project.vim
+*.o
+*.exe
+*.a
+*.lib
+*~
