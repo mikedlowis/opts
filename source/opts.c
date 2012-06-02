@@ -22,16 +22,16 @@ Result_T* OPTS_ParseOptions( OptionConfig_T* opts, int argc, char** argv )
         // If we have an option
         if ( '-' == ctx.current )
         {
-            // And its a long one
-            if( '-' == OPTS_NextCharacter( &ctx ) )
-            {
-                (void)OPTS_ParseLongOption( &ctx );
-            }
-            // or a short one
-            else
-            {
-                (void)OPTS_ParseShortOption( &ctx );
-            }
+            OPTS_ParseShortOption( &ctx );
+            //// And its a long one
+            //if( '-' == OPTS_NextCharacter( &ctx ) )
+            //{
+            //    (void)OPTS_ParseLongOption( &ctx );
+            //}
+            //// or a short one
+            //else
+            //{
+            //}
         }
         // Or we have a floating argument
         else
@@ -64,6 +64,24 @@ void OPTS_InitContext( StreamContext_T* ctx, int argc, char** argv )
 
 void OPTS_ParseShortOption( StreamContext_T* ctx )
 {
+    // Get Config
+    // if( current != ' ' )
+    // {
+    //     Get Config
+    //     if( config != NULL )
+    //     {
+    //         Save option
+    //         if( has arg )
+    //         {
+    //             Save arg
+    //         }
+    //         Add option to list
+    //     }
+    //     else
+    //     {
+    //         Exit: "Unknown option: %c\n"
+    //     }
+    // }
 }
 
 void OPTS_ParseLongOption( StreamContext_T* ctx )
@@ -72,6 +90,22 @@ void OPTS_ParseLongOption( StreamContext_T* ctx )
 
 void OPTS_ParseArgument( StreamContext_T* ctx )
 {
+}
+
+OptionConfig_T* OPTS_GetOptConfig( OptionConfig_T* opts, OptionType_T typ, char* name )
+{
+    OptionConfig_T* cfg = NULL;
+    int i = 0;
+    while( opts[i].type != END )
+    {
+        if( (opts[i].type == typ) && (0 == strcmp(opts[i].name, name)) )
+        {
+            cfg = &(opts[i]);
+            break;
+        }
+        i++;
+    }
+    return cfg;
 }
 
 char* OPTS_NextToken( StreamContext_T* ctx )

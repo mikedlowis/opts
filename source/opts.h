@@ -61,6 +61,8 @@ void OPTS_ParseLongOption( StreamContext_T* ctx );
 
 void OPTS_ParseArgument( StreamContext_T* ctx );
 
+OptionConfig_T* OPTS_GetOptConfig( OptionConfig_T* opts, OptionType_T typ, char* name );
+
 char* OPTS_NextToken( StreamContext_T* ctx );
 
 char OPTS_NextCharacter( StreamContext_T* ctx );

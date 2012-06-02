@@ -104,6 +104,41 @@ namespace {
     //    free(results);
     //}
 
+
+    //-------------------------------------------------------------------------
+    // Test GetOptConfig Function
+    //-------------------------------------------------------------------------
+    TEST(Verify_GetOptConfig_Can_Retrieve_A_Short_Config_By_Name_And_Type)
+    {
+        OptionConfig_T* result = NULL;
+        result = OPTS_GetOptConfig( Options_Config, SHORT, "a" );
+        CHECK( result == &(Options_Config[0]) );
+    }
+
+    TEST(Verify_GetOptConfig_Can_Retrieve_A_Long_Config_By_Name_And_Type)
+    {
+        OptionConfig_T* result = NULL;
+        result = OPTS_GetOptConfig( Options_Config, LONG, "foo" );
+        CHECK( result == &(Options_Config[2]) );
+    }
+
+    TEST(Verify_GetOptConfig_Returns_Null_If_No_Config_Found)
+    {
+        OptionConfig_T* result = NULL;
+        result = OPTS_GetOptConfig( Options_Config, LONG, "baz" );
+        CHECK( result == NULL );
+    }
+
+    TEST(Verify_GetOptConfig_Returns_Null_If_Config_List_Empty)
+    {
+        OptionConfig_T config[] = {
+            { END,   NULL,  NULL,     0, NULL }
+        };
+        OptionConfig_T* result = NULL;
+        result = OPTS_GetOptConfig( config, LONG, "foo" );
+        CHECK( result == NULL );
+    }
+
     //-------------------------------------------------------------------------
     // Test NextToken Function
     //-------------------------------------------------------------------------
