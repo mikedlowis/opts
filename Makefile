@@ -66,7 +66,7 @@ INC_DIRS = $(call incdirs, $(SRC_ROOT)) \
 # Compiler and Linker Options
 #----------------------------
 CXXFLAGS      = $(INC_DIRS) -Wall -fPIC
-TEST_CXXFLAGS = $(INC_DIRS) -Wall
+TEST_CXXFLAGS = $(INC_DIRS)
 ARFLAGS       = rcs
 
 # Build Rules
