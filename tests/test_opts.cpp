@@ -24,16 +24,18 @@ OptionConfig_T Options_Config[] = {
 //-----------------------------------------------------------------------------
 // Global Test Variables
 //-----------------------------------------------------------------------------
-static int Expected_Exit_Code = -1;
 static jmp_buf Exit_Point = {0};
 
 //-----------------------------------------------------------------------------
 // Helper Functions
 //-----------------------------------------------------------------------------
+#define CHECK_DOES_NOT_EXIT() \
+    if( 0 != setjmp(Exit_Point) ) { CHECK( false ); } else
+
 void exit(int code)
 {
     // Simulate an exit by longjmping to the jmp_buf with the desired error code
-    longjmp( Exit_Point, Expected_Exit_Code);
+    longjmp( Exit_Point, code);
 }
 
 //-----------------------------------------------------------------------------
@@ -70,121 +72,142 @@ namespace {
     {
         char* args[] = { (char*)"-a" };
 
-        Result_T* results = OPTS_ParseOptions( Options_Config, 1, args );
+        CHECK_DOES_NOT_EXIT()
+        {
+            Result_T* results = OPTS_ParseOptions( Options_Config, 1, args );
 
-        OptionList_T* result = results->options;
-        CHECK( NULL != result );
-        CHECK( NULL != result->head );
-        CHECK( NULL != result->tail );
-        CHECK( result->head == result->tail );
-        CHECK( NULL != result->tail->key );
-        CHECK( 0 == strcmp( result->tail->key, "a" ) );
-        CHECK( NULL == result->tail->val );
-        CHECK( NULL == result->tail->next );
+            OptionList_T* result = results->options;
+            CHECK( NULL != result );
+            CHECK( NULL != result->head );
+            CHECK( NULL != result->tail );
+            CHECK( result->head == result->tail );
+            CHECK( NULL != result->tail->key );
+            CHECK( 0 == strcmp( result->tail->key, "a" ) );
+            CHECK( NULL == result->tail->val );
+            CHECK( NULL == result->tail->next );
+        }
     }
 
     TEST(Verify_ParseOptions_Parses_A_Short_Option_With_A_Param_And_A_Space)
     {
         char* args[] = { (char*)"-b", (char*)"5" };
 
-        Result_T* results = OPTS_ParseOptions( Options_Config, 2, args );
+        CHECK_DOES_NOT_EXIT()
+        {
+            Result_T* results = OPTS_ParseOptions( Options_Config, 2, args );
 
-        OptionList_T* result = results->options;
-        CHECK( NULL != result );
-        CHECK( NULL != result->head );
-        CHECK( NULL != result->tail );
-        CHECK( result->head == result->tail );
-        CHECK( NULL != result->tail->key );
-        CHECK( 0 == strcmp( result->tail->key, "b" ) );
-        CHECK( NULL != result->tail->val );
-        CHECK( 0 == strcmp( result->tail->val, "5" ) );
-        CHECK( NULL == result->tail->next );
+            OptionList_T* result = results->options;
+            CHECK( NULL != result );
+            CHECK( NULL != result->head );
+            CHECK( NULL != result->tail );
+            CHECK( result->head == result->tail );
+            CHECK( NULL != result->tail->key );
+            CHECK( 0 == strcmp( result->tail->key, "b" ) );
+            CHECK( NULL != result->tail->val );
+            CHECK( 0 == strcmp( result->tail->val, "5" ) );
+            CHECK( NULL == result->tail->next );
+        }
     }
 
     TEST(Verify_ParseOptions_Parses_A_Short_Option_With_A_Param_And_No_Space)
     {
         char* args[] = { (char*)"-b5" };
 
-        Result_T* results = OPTS_ParseOptions( Options_Config, 1, args );
+        CHECK_DOES_NOT_EXIT()
+        {
+            Result_T* results = OPTS_ParseOptions( Options_Config, 1, args );
 
-        OptionList_T* result = results->options;
-        CHECK( NULL != result );
-        CHECK( NULL != result->head );
-        CHECK( NULL != result->tail );
-        CHECK( result->head == result->tail );
-        CHECK( NULL != result->tail->key );
-        CHECK( 0 == strcmp( result->tail->key, "b" ) );
-        CHECK( NULL != result->tail->val );
-        CHECK( 0 == strcmp( result->tail->val, "5" ) );
-        CHECK( NULL == result->tail->next );
+            OptionList_T* result = results->options;
+            CHECK( NULL != result );
+            CHECK( NULL != result->head );
+            CHECK( NULL != result->tail );
+            CHECK( result->head == result->tail );
+            CHECK( NULL != result->tail->key );
+            CHECK( 0 == strcmp( result->tail->key, "b" ) );
+            CHECK( NULL != result->tail->val );
+            CHECK( 0 == strcmp( result->tail->val, "5" ) );
+            CHECK( NULL == result->tail->next );
+        }
     }
 
     TEST(Verify_ParseOptions_Parses_A_Long_Option_With_No_Param)
     {
         char* args[] = { (char*)"--foo" };
 
-        Result_T* results = OPTS_ParseOptions( Options_Config, 1, args );
+        CHECK_DOES_NOT_EXIT()
+        {
+            Result_T* results = OPTS_ParseOptions( Options_Config, 1, args );
 
-        OptionList_T* result = results->options;
-        CHECK( NULL != result );
-        CHECK( NULL != result->head );
-        CHECK( NULL != result->tail );
-        CHECK( result->head == result->tail );
-        CHECK( NULL != result->tail->key );
-        CHECK( 0 == strcmp( result->tail->key, "foo" ) );
-        CHECK( NULL == result->tail->val );
-        CHECK( NULL == result->tail->next );
+            OptionList_T* result = results->options;
+            CHECK( NULL != result );
+            CHECK( NULL != result->head );
+            CHECK( NULL != result->tail );
+            CHECK( result->head == result->tail );
+            CHECK( NULL != result->tail->key );
+            CHECK( 0 == strcmp( result->tail->key, "foo" ) );
+            CHECK( NULL == result->tail->val );
+            CHECK( NULL == result->tail->next );
+        }
     }
 
     TEST(Verify_ParseOptions_Parses_A_Long_Option_With_A_Param_And_A_Space)
     {
         char* args[] = { (char*)"--bar", (char*)"baz" };
 
-        Result_T* results = OPTS_ParseOptions( Options_Config, 2, args );
+        CHECK_DOES_NOT_EXIT()
+        {
+            Result_T* results = OPTS_ParseOptions( Options_Config, 2, args );
 
-        OptionList_T* result = results->options;
-        CHECK( NULL != result );
-        CHECK( NULL != result->head );
-        CHECK( NULL != result->tail );
-        CHECK( result->head == result->tail );
-        CHECK( NULL != result->tail->key );
-        CHECK( 0 == strcmp( result->tail->key, "bar" ) );
-        CHECK( NULL != result->tail->val );
-        CHECK( 0 == strcmp( result->tail->val, "baz" ) );
-        CHECK( NULL == result->tail->next );
+            OptionList_T* result = results->options;
+            CHECK( NULL != result );
+            CHECK( NULL != result->head );
+            CHECK( NULL != result->tail );
+            CHECK( result->head == result->tail );
+            CHECK( NULL != result->tail->key );
+            CHECK( 0 == strcmp( result->tail->key, "bar" ) );
+            CHECK( NULL != result->tail->val );
+            CHECK( 0 == strcmp( result->tail->val, "baz" ) );
+            CHECK( NULL == result->tail->next );
+        }
     }
 
     TEST(Verify_ParseOptions_Parses_A_Long_Option_With_A_Param_And_An_Equals_Sign)
     {
         char* args[] = { (char*)"--bar=baz" };
 
-        Result_T* results = OPTS_ParseOptions( Options_Config, 1, args );
+        CHECK_DOES_NOT_EXIT()
+        {
+            Result_T* results = OPTS_ParseOptions( Options_Config, 1, args );
 
-        OptionList_T* result = results->options;
-        CHECK( NULL != result );
-        CHECK( NULL != result->head );
-        CHECK( NULL != result->tail );
-        CHECK( result->head == result->tail );
-        CHECK( NULL != result->tail->key );
-        CHECK( 0 == strcmp( result->tail->key, "bar" ) );
-        CHECK( NULL != result->tail->val );
-        CHECK( 0 == strcmp( result->tail->val, "baz" ) );
-        CHECK( NULL == result->tail->next );
+            OptionList_T* result = results->options;
+            CHECK( NULL != result );
+            CHECK( NULL != result->head );
+            CHECK( NULL != result->tail );
+            CHECK( result->head == result->tail );
+            CHECK( NULL != result->tail->key );
+            CHECK( 0 == strcmp( result->tail->key, "bar" ) );
+            CHECK( NULL != result->tail->val );
+            CHECK( 0 == strcmp( result->tail->val, "baz" ) );
+            CHECK( NULL == result->tail->next );
+        }
     }
 
     TEST(Verify_ParseOptions_Parses_A_Floating_Argument)
     {
         char* args[] = { (char*)"baz1" };
 
-        Result_T* results = OPTS_ParseOptions( Options_Config, 1, args );
+        CHECK_DOES_NOT_EXIT()
+        {
+            Result_T* results = OPTS_ParseOptions( Options_Config, 1, args );
 
-        ArgumentList_T* result = results->arguments;
-        CHECK( NULL != result );
-        CHECK( NULL != result->head );
-        CHECK( NULL != result->tail );
-        CHECK( result->head == result->tail );
-        CHECK( 0 == strcmp( result->tail->val, (char*)"baz1" ) );
-        CHECK( NULL == result->tail->next );
+            ArgumentList_T* result = results->arguments;
+            CHECK( NULL != result );
+            CHECK( NULL != result->head );
+            CHECK( NULL != result->tail );
+            CHECK( result->head == result->tail );
+            CHECK( 0 == strcmp( result->tail->val, (char*)"baz1" ) );
+            CHECK( NULL == result->tail->next );
+        }
     }
 
     //-------------------------------------------------------------------------
@@ -197,9 +220,8 @@ namespace {
         StreamContext_T ctx;
         ctx.options = Options_Config;
         OPTS_InitContext( &ctx, 1, args );
-        Expected_Exit_Code = 1;
-        exit_code = setjmp( Exit_Point );
 
+        exit_code = setjmp( Exit_Point );
         if( 0 == exit_code )
         {
             OPTS_ParseShortOption( &ctx );
@@ -223,17 +245,19 @@ namespace {
         ctx.options = Options_Config;
         OPTS_InitContext( &ctx, 2, args );
 
-        OPTS_ParseShortOption( &ctx );
-
-        OptionList_T* result = ctx.results->options;
-        CHECK( NULL != result );
-        CHECK( NULL != result->head );
-        CHECK( NULL != result->tail );
-        CHECK( result->head == result->tail );
-        CHECK( NULL != result->tail->key );
-        CHECK( 0 == strcmp( result->tail->key, "a" ) );
-        CHECK( NULL == result->tail->val );
-        CHECK( NULL == result->tail->next );
+        CHECK_DOES_NOT_EXIT()
+        {
+            OPTS_ParseShortOption( &ctx );
+            OptionList_T* result = ctx.results->options;
+            CHECK( NULL != result );
+            CHECK( NULL != result->head );
+            CHECK( NULL != result->tail );
+            CHECK( result->head == result->tail );
+            CHECK( NULL != result->tail->key );
+            CHECK( 0 == strcmp( result->tail->key, "a" ) );
+            CHECK( NULL == result->tail->val );
+            CHECK( NULL == result->tail->next );
+        }
     }
 
     TEST(Verify_ParseShortOption_Parses_A_Single_Valid_Option_With_Arg_And_No_Space)
@@ -243,18 +267,21 @@ namespace {
         ctx.options = Options_Config;
         OPTS_InitContext( &ctx, 1, args );
 
-        OPTS_ParseShortOption( &ctx );
+        CHECK_DOES_NOT_EXIT()
+        {
+            OPTS_ParseShortOption( &ctx );
 
-        OptionList_T* result = ctx.results->options;
-        CHECK( NULL != result );
-        CHECK( NULL != result->head );
-        CHECK( NULL != result->tail );
-        CHECK( result->head == result->tail );
-        CHECK( NULL != result->tail->key );
-        CHECK( 0 == strcmp( result->tail->key, "b" ) );
-        CHECK( NULL != result->tail->val );
-        CHECK( 0 == strcmp( result->tail->val, "5" ) );
-        CHECK( NULL == result->tail->next );
+            OptionList_T* result = ctx.results->options;
+            CHECK( NULL != result );
+            CHECK( NULL != result->head );
+            CHECK( NULL != result->tail );
+            CHECK( result->head == result->tail );
+            CHECK( NULL != result->tail->key );
+            CHECK( 0 == strcmp( result->tail->key, "b" ) );
+            CHECK( NULL != result->tail->val );
+            CHECK( 0 == strcmp( result->tail->val, "5" ) );
+            CHECK( NULL == result->tail->next );
+        }
     }
 
     TEST(Verify_ParseShortOption_Parses_A_Single_Valid_Option_With_Arg_And_Space)
@@ -264,18 +291,21 @@ namespace {
         ctx.options = Options_Config;
         OPTS_InitContext( &ctx, 2, args );
 
-        OPTS_ParseShortOption( &ctx );
+        CHECK_DOES_NOT_EXIT()
+        {
+            OPTS_ParseShortOption( &ctx );
 
-        OptionList_T* result = ctx.results->options;
-        CHECK( NULL != result );
-        CHECK( NULL != result->head );
-        CHECK( NULL != result->tail );
-        CHECK( result->head == result->tail );
-        CHECK( NULL != result->tail->key );
-        CHECK( 0 == strcmp( result->tail->key, "b" ) );
-        CHECK( NULL != result->tail->val );
-        CHECK( 0 == strcmp( result->tail->val, "5" ) );
-        CHECK( NULL == result->tail->next );
+            OptionList_T* result = ctx.results->options;
+            CHECK( NULL != result );
+            CHECK( NULL != result->head );
+            CHECK( NULL != result->tail );
+            CHECK( result->head == result->tail );
+            CHECK( NULL != result->tail->key );
+            CHECK( 0 == strcmp( result->tail->key, "b" ) );
+            CHECK( NULL != result->tail->val );
+            CHECK( 0 == strcmp( result->tail->val, "5" ) );
+            CHECK( NULL == result->tail->next );
+        }
     }
 
     TEST(Verify_ParseShortOption_Exits_With_Error_When_No_Arg_Received_When_Expected)
@@ -285,9 +315,8 @@ namespace {
         StreamContext_T ctx;
         ctx.options = Options_Config;
         OPTS_InitContext( &ctx, 1, args );
-        Expected_Exit_Code = 1;
-        exit_code = setjmp( Exit_Point );
 
+        exit_code = setjmp( Exit_Point );
         if( 0 == exit_code )
         {
             OPTS_ParseShortOption( &ctx );
@@ -311,23 +340,26 @@ namespace {
         ctx.options = Options_Config;
         OPTS_InitContext( &ctx, 1, args );
 
-        OPTS_ParseShortOption( &ctx );
+        CHECK_DOES_NOT_EXIT()
+        {
+            OPTS_ParseShortOption( &ctx );
 
-        OptionList_T* result = ctx.results->options;
-        CHECK( NULL != result );
-        CHECK( NULL != result->head );
-        CHECK( NULL != result->tail );
-        CHECK( result->head != result->tail );
-        // First option
-        CHECK( NULL != result->head->key );
-        CHECK( 0 == strcmp( result->head->key, "a" ) );
-        CHECK( NULL == result->head->val );
-        CHECK( NULL != result->head->next );
-        // Second option
-        CHECK( NULL != result->tail->key );
-        CHECK( 0 == strcmp( result->tail->key, "a" ) );
-        CHECK( NULL == result->tail->val );
-        CHECK( NULL == result->tail->next );
+            OptionList_T* result = ctx.results->options;
+            CHECK( NULL != result );
+            CHECK( NULL != result->head );
+            CHECK( NULL != result->tail );
+            CHECK( result->head != result->tail );
+            // First option
+            CHECK( NULL != result->head->key );
+            CHECK( 0 == strcmp( result->head->key, "a" ) );
+            CHECK( NULL == result->head->val );
+            CHECK( NULL != result->head->next );
+            // Second option
+            CHECK( NULL != result->tail->key );
+            CHECK( 0 == strcmp( result->tail->key, "a" ) );
+            CHECK( NULL == result->tail->val );
+            CHECK( NULL == result->tail->next );
+        }
     }
 
     TEST(Verify_ParseShortOption_Parses_A_Group_Of_Valid_Options_With_The_Last_Having_An_Arg)
@@ -337,24 +369,27 @@ namespace {
         ctx.options = Options_Config;
         OPTS_InitContext( &ctx, 1, args );
 
-        OPTS_ParseShortOption( &ctx );
+        CHECK_DOES_NOT_EXIT()
+        {
+            OPTS_ParseShortOption( &ctx );
 
-        OptionList_T* result = ctx.results->options;
-        CHECK( NULL != result );
-        CHECK( NULL != result->head );
-        CHECK( NULL != result->tail );
-        CHECK( result->head != result->tail );
-        // First option
-        CHECK( NULL != result->head->key );
-        CHECK( 0 == strcmp( result->head->key, "b" ) );
-        CHECK( NULL != result->head->val );
-        CHECK( 0 == strcmp( result->head->val, "5" ) );
-        CHECK( NULL != result->head->next );
-        // Second option
-        CHECK( NULL != result->tail->key );
-        CHECK( 0 == strcmp( result->tail->key, "a" ) );
-        CHECK( NULL == result->tail->val );
-        CHECK( NULL == result->tail->next );
+            OptionList_T* result = ctx.results->options;
+            CHECK( NULL != result );
+            CHECK( NULL != result->head );
+            CHECK( NULL != result->tail );
+            CHECK( result->head != result->tail );
+            // First option
+            CHECK( NULL != result->head->key );
+            CHECK( 0 == strcmp( result->head->key, "b" ) );
+            CHECK( NULL != result->head->val );
+            CHECK( 0 == strcmp( result->head->val, "5" ) );
+            CHECK( NULL != result->head->next );
+            // Second option
+            CHECK( NULL != result->tail->key );
+            CHECK( 0 == strcmp( result->tail->key, "a" ) );
+            CHECK( NULL == result->tail->val );
+            CHECK( NULL == result->tail->next );
+        }
     }
 
     //-------------------------------------------------------------------------
@@ -367,9 +402,8 @@ namespace {
         StreamContext_T ctx;
         ctx.options = Options_Config;
         OPTS_InitContext( &ctx, 1, args );
-        Expected_Exit_Code = 1;
-        exit_code = setjmp( Exit_Point );
 
+        exit_code = setjmp( Exit_Point );
         if( 0 == exit_code )
         {
             OPTS_ParseLongOption( &ctx );
@@ -393,9 +427,8 @@ namespace {
         StreamContext_T ctx;
         ctx.options = Options_Config;
         OPTS_InitContext( &ctx, 2, args );
-        Expected_Exit_Code = 1;
-        exit_code = setjmp( Exit_Point );
 
+        exit_code = setjmp( Exit_Point );
         if( 0 == exit_code )
         {
             OPTS_ParseLongOption( &ctx );
@@ -419,9 +452,8 @@ namespace {
         StreamContext_T ctx;
         ctx.options = Options_Config;
         OPTS_InitContext( &ctx, 1, args );
-        Expected_Exit_Code = 1;
-        exit_code = setjmp( Exit_Point );
 
+        exit_code = setjmp( Exit_Point );
         if( 0 == exit_code )
         {
             OPTS_ParseLongOption( &ctx );
@@ -445,15 +477,18 @@ namespace {
         ctx.options = Options_Config;
         OPTS_InitContext( &ctx, 1, args );
 
-        OPTS_ParseLongOption( &ctx );
+        CHECK_DOES_NOT_EXIT()
+        {
+            OPTS_ParseLongOption( &ctx );
 
-        OptionList_T* result = ctx.results->options;
-        CHECK( NULL != result );
-        CHECK( NULL != result->head );
-        CHECK( NULL != result->tail );
-        CHECK( result->head == result->tail );
-        CHECK( 0 == strcmp( result->head->key, (char*)"foo") );
-        CHECK( NULL == result->tail->val );
+            OptionList_T* result = ctx.results->options;
+            CHECK( NULL != result );
+            CHECK( NULL != result->head );
+            CHECK( NULL != result->tail );
+            CHECK( result->head == result->tail );
+            CHECK( 0 == strcmp( result->head->key, (char*)"foo") );
+            CHECK( NULL == result->tail->val );
+        }
     }
 
     TEST(Verify_ParseLongOption_Parses_Option_With_Arg_Using_Equals_Sign)
@@ -463,15 +498,18 @@ namespace {
         ctx.options = Options_Config;
         OPTS_InitContext( &ctx, 1, args );
 
-        OPTS_ParseLongOption( &ctx );
+        CHECK_DOES_NOT_EXIT()
+        {
+            OPTS_ParseLongOption( &ctx );
 
-        OptionList_T* result = ctx.results->options;
-        CHECK( NULL != result );
-        CHECK( NULL != result->head );
-        CHECK( NULL != result->tail );
-        CHECK( result->head == result->tail );
-        CHECK( 0 == strcmp( result->head->key, (char*)"bar") );
-        CHECK( 0 == strcmp( result->head->val, (char*)"baz") );
+            OptionList_T* result = ctx.results->options;
+            CHECK( NULL != result );
+            CHECK( NULL != result->head );
+            CHECK( NULL != result->tail );
+            CHECK( result->head == result->tail );
+            CHECK( 0 == strcmp( result->head->key, (char*)"bar") );
+            CHECK( 0 == strcmp( result->head->val, (char*)"baz") );
+        }
     }
 
     TEST(Verify_ParseLongOption_Parses_Option_With_Arg_Not_Using_Equals_Sign)
@@ -481,15 +519,18 @@ namespace {
         ctx.options = Options_Config;
         OPTS_InitContext( &ctx, 2, args );
 
-        OPTS_ParseLongOption( &ctx );
+        CHECK_DOES_NOT_EXIT()
+        {
+            OPTS_ParseLongOption( &ctx );
 
-        OptionList_T* result = ctx.results->options;
-        CHECK( NULL != result );
-        CHECK( NULL != result->head );
-        CHECK( NULL != result->tail );
-        CHECK( result->head == result->tail );
-        CHECK( 0 == strcmp( result->head->key, (char*)"bar") );
-        CHECK( 0 == strcmp( result->head->val, (char*)"baz") );
+            OptionList_T* result = ctx.results->options;
+            CHECK( NULL != result );
+            CHECK( NULL != result->head );
+            CHECK( NULL != result->tail );
+            CHECK( result->head == result->tail );
+            CHECK( 0 == strcmp( result->head->key, (char*)"bar") );
+            CHECK( 0 == strcmp( result->head->val, (char*)"baz") );
+        }
     }
 
     //-------------------------------------------------------------------------

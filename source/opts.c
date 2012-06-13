@@ -173,7 +173,7 @@ char* OPTS_NextToken( StreamContext_T* ctx )
         (void)OPTS_NextCharacter( ctx );
         while( (EOF != ctx->current) && (' ' != ctx->current) )
         {
-            OPTS_AppendCharacter( tok, ctx->current );
+            tok = OPTS_AppendCharacter( tok, ctx->current );
             (void)OPTS_NextCharacter( ctx );
         }
     }
@@ -209,6 +209,7 @@ char OPTS_ConsumeWhitespace( StreamContext_T* ctx )
     }
 }
 
+#include <stdio.h>
 char OPTS_NextCharacter( StreamContext_T* ctx )
 {
     char current = EOF;
@@ -236,7 +237,6 @@ char OPTS_NextCharacter( StreamContext_T* ctx )
             }
         }
     }
-
     return current;
 }
 

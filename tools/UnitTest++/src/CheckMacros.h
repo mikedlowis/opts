@@ -1,4 +1,4 @@
-#ifndef UNITTEST_CHECKMACROS_H 
+#ifndef UNITTEST_CHECKMACROS_H
 #define UNITTEST_CHECKMACROS_H
 
 #include "Checks.h"
@@ -12,35 +12,38 @@
 #endif
 
 #ifdef CHECK_EQUAL
-	#error UnitTest++ redefines CHECK_EQUAL
+    #error UnitTest++ redefines CHECK_EQUAL
 #endif
 
 #ifdef CHECK_CLOSE
-	#error UnitTest++ redefines CHECK_CLOSE
+    #error UnitTest++ redefines CHECK_CLOSE
 #endif
 
 #ifdef CHECK_ARRAY_EQUAL
-	#error UnitTest++ redefines CHECK_ARRAY_EQUAL
+    #error UnitTest++ redefines CHECK_ARRAY_EQUAL
 #endif
 
 #ifdef CHECK_ARRAY_CLOSE
-	#error UnitTest++ redefines CHECK_ARRAY_CLOSE
+    #error UnitTest++ redefines CHECK_ARRAY_CLOSE
 #endif
 
 #ifdef CHECK_ARRAY2D_CLOSE
-	#error UnitTest++ redefines CHECK_ARRAY2D_CLOSE
+    #error UnitTest++ redefines CHECK_ARRAY2D_CLOSE
 #endif
 
 #define CHECK(value) \
     do \
     { \
         try { \
-            if (!UnitTest::Check(value)) \
+            if (!UnitTest::Check(value)) { \
                 UnitTest::CurrentTest::Results()->OnTestFailure(UnitTest::TestDetails(*UnitTest::CurrentTest::Details(), __LINE__), #value); \
+                return; \
+            } \
         } \
         catch (...) { \
             UnitTest::CurrentTest::Results()->OnTestFailure(UnitTest::TestDetails(*UnitTest::CurrentTest::Details(), __LINE__), \
                     "Unhandled exception in CHECK(" #value ")"); \
+            return;\
         } \
     } while (0)
 
