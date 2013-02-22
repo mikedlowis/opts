@@ -51,6 +51,10 @@ typedef struct {
     Result_T* results;
 } StreamContext_T;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 Result_T* OPTS_ParseOptions( OptionConfig_T* opts, int argc, char** argv );
 
 void OPTS_InitContext( StreamContext_T* ctx, int argc, char** argv );
@@ -72,5 +76,9 @@ char OPTS_ConsumeWhitespace( StreamContext_T* ctx );
 char OPTS_NextCharacter( StreamContext_T* ctx );
 
 char* OPTS_AppendCharacter( char* str, char ch );
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
