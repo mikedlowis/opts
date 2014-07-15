@@ -7,19 +7,21 @@ desc "Force the build to build in Posix mode"
 task(:posix){ is_windows = false }
 
 base = Rscons::Environment.new do |env|
-  #env["CFLAGS"] += ['-Wall', '-Werror']
+  env["CFLAGS"] += ['-Wall', '-Werror']
   env['CXXSUFFIX'] = '.cpp'
 end
 
-task :default => [:staticlib]
+task :default => [:test, :build]
 
 task :build => [:staticlib]
 
+desc "Run all unit tests"
 task :test => [:unittest_pp] do
     base.clone do |env|
-        env['CPPFLAGS'] << 'tools/UnitTest++/src/'
-        env.Program('build/test_libopts', Dir['source/**/*.{c,cpp}', "tests/**/*.{c,cpp}"])
-    end.process
+        env['CPPPATH'] += ['tools/UnitTest++/src/', 'source/']
+        env.Program('build/test_libopts', Dir['source/**/*.{c,cpp}', "tests/**/*.{c,cpp}", 'build/UnitTest++.a'])
+     end.process
+     sh "build/test_libopts"
 end
 
 desc "Build the OPTS static library"

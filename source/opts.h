@@ -71,7 +71,7 @@ char* OPTS_NextToken( StreamContext_T* ctx );
 
 void OPTS_AddOption( Result_T* res, char* name, char* arg );
 
-char OPTS_ConsumeWhitespace( StreamContext_T* ctx );
+void OPTS_ConsumeWhitespace( StreamContext_T* ctx );
 
 char OPTS_NextCharacter( StreamContext_T* ctx );
 
