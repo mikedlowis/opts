@@ -1,14 +1,13 @@
 // Unit Test Framework Includes
-#include "UnitTest++.h"
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <csetjmp>
+#include "test.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <setjmp.h>
+#include <stdbool.h>
 
 // File To Test
 #include "opts.h"
-
-using namespace UnitTest;
 
 //-----------------------------------------------------------------------------
 // Sample Option Configuration
@@ -38,10 +37,12 @@ void exit(int code)
     longjmp( Exit_Point, code);
 }
 
+void test_setup(void) {}
+
 //-----------------------------------------------------------------------------
 // Begin Unit Tests
 //-----------------------------------------------------------------------------
-namespace {
+TEST_SUITE(Opts) {
     //-------------------------------------------------------------------------
     // Test InitContext Function
     //-------------------------------------------------------------------------
@@ -657,9 +658,9 @@ namespace {
         CHECK( NULL == results.options->head->next );
         CHECK( results.options->head == results.options->tail );
 
-        delete results.options->head->key;
-        delete results.options->head;
-        delete results.options;
+        free(results.options->head->key);
+        free(results.options->head);
+        free(results.options);
     }
 
     TEST(Verify_AddOption_Appends_Result_To_Tail_Of_List)
@@ -683,9 +684,9 @@ namespace {
         CHECK( arg == results.options->tail->val );
         CHECK( NULL == results.options->tail->next );
 
-        delete results.options->tail->key;
-        delete results.options->tail;
-        delete results.options;
+        free(results.options->tail->key);
+        free(results.options->tail);
+        free(results.options);
     }
 
     //-------------------------------------------------------------------------

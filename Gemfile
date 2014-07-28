@@ -1,0 +1,2 @@
+gem "rscons"
+gem "rake"

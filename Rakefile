@@ -1,45 +1,59 @@
+#------------------------------------------------------------------------------
+# Bundler Setup
+#------------------------------------------------------------------------------
+require "bundler"
+begin
+  Bundler.setup(:default, :development)
+rescue Bundler::BundlerError => e
+  raise LoadError.new("Unable to Bundler.setup(): You probably need to run `bundle install`: #{e.message}")
+end
 require 'rscons'
 require 'rbconfig'
 
-is_windows = (RbConfig::CONFIG['host_os'] =~ /mswin|mingw|cygwin/)
-
-desc "Force the build to build in Posix mode"
-task(:posix){ is_windows = false }
-
-base = Rscons::Environment.new do |env|
-  env["CFLAGS"] += ['-Wall', '-Werror']
-  env['CXXSUFFIX'] = '.cpp'
+#------------------------------------------------------------------------------
+# Envrionment Definitions
+#------------------------------------------------------------------------------
+# Define the compiler environment
+Env = Rscons::Environment.new do |env|
+  env.build_dir('source/','build/obj/source')
+  env["CFLAGS"] += ['-Wall', '-Wextra', ]#'-Werror']
+  env['CPPPATH'] += Dir['source/**/']
 end
 
+# Define the test environment
+TestEnv = Env.clone  do |env|
+  env.build_dir('source','build/obj/test_source')
+  env.build_dir('tests','build/obj/tests/source')
+  env['CPPPATH'] += Dir['tests/']
+end
+
+# Make sure the environment is processed before we quit
+at_exit { Env.process; TestEnv.process}
+
+#------------------------------------------------------------------------------
+# Main Build Targets
+#------------------------------------------------------------------------------
 task :default => [:test, :build]
 
-task :build => [:staticlib]
+desc "Build the Opts static library"
+task :build do
+    Env.Library('build/libopts.a', Dir['source/**/*.c'])
+    Env.process
+end
 
+#------------------------------------------------------------------------------
+# Unit Testing Targets
+#------------------------------------------------------------------------------
 desc "Run all unit tests"
-task :test => [:unittest_pp] do
-    base.clone do |env|
-        env['CPPPATH'] += ['tools/UnitTest++/src/', 'source/']
-        env.Program('build/test_libopts', Dir['source/**/*.{c,cpp}', "tests/**/*.{c,cpp}", 'build/UnitTest++.a'])
-     end.process
-     sh "build/test_libopts"
+task :test do
+    TestEnv.Program('build/test_libopts', Dir['source/**/*.c', 'tests/**/*.c'])
+    TestEnv.process
+    sh "build/test_libopts"
 end
 
-desc "Build the OPTS static library"
-task :staticlib do
-    base.Library('build/libopts.a', Dir['source/**.{c,cpp}'])
-    base.process
-end
-
-task :unittest_pp do
-    sources = Dir['tools/UnitTest++/src/*.{c,cpp}']
-    if is_windows
-        sources += Dir['tools/UnitTest++/src/Win32/*.{c,cpp}']
-    else
-        sources += Dir['tools/UnitTest++/src/Posix/*.{c,cpp}']
-    end
-    base.Library('build/UnitTest++.a', sources)
-    base.process
-end
-
+#------------------------------------------------------------------------------
+# Cleanup Target
+#------------------------------------------------------------------------------
 desc "Clean all generated files and directories"
 task(:clean) { Rscons.clean }
+
