@@ -3,6 +3,8 @@
 #include <string.h>
 #include "opts.h"
 
+static char* strclone(const char* p_old);
+
 Result_T* OPTS_ParseOptions( OptionConfig_T* opts, int argc, char** argv )
 {
     // Setup the stream
@@ -185,7 +187,7 @@ void OPTS_AddOption( Result_T* res, char* name, char* arg )
     if( (NULL != res) && (NULL != res->options) )
     {
         Option_T* opt = (Option_T*)malloc( sizeof( Option_T ) );
-        opt->key = strdup( name );
+        opt->key = strclone( name );
         opt->val = arg;
         opt->next = NULL;
         if( res->options->head == NULL )
@@ -247,5 +249,14 @@ char* OPTS_AppendCharacter( char* str, char ch )
     str[ new_size - 2 ] = ch;
     str[ new_size - 1 ] = '\0';
     return str;
+}
+
+
+static char* strclone(const char* p_old) {
+    size_t length = strlen(p_old);
+    char* p_str = (char*)malloc(length+1);
+    memcpy(p_str, p_old, length);
+    p_str[length] = '\0';
+    return p_str;
 }
 

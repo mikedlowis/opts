@@ -34,7 +34,7 @@ typedef enum {
 } OptionType_T;
 
 typedef struct OptionConfig_T {
-    int type;
+    unsigned int type;
     char* name;
     char* dest;
     int has_arg;
