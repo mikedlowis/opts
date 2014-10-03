@@ -25,6 +25,8 @@ TestEnv = Env.clone  do |env|
   env.build_dir('source','build/obj/test_source')
   env.build_dir('tests','build/obj/tests/source')
   env['CPPPATH'] += Dir['tests/']
+  env["CFLAGS"]  += ['--coverage']
+  env["LDFLAGS"] += ['--coverage']
 end
 
 # Make sure the environment is processed before we quit

@@ -3,155 +3,162 @@
 #include <string.h>
 #include "opts.h"
 
+typedef struct {
+    char* name;
+    char* tag;
+    char* value;
+} option_t;
+
+typedef struct entry_t {
+    void* value;
+    struct entry_t* next;
+} entry_t;
+
+static entry_t* Options   = NULL;
+static entry_t* Arguments = NULL;
+
+typedef enum { LONG, SHORT } OptionType_T;
+
+typedef struct {
+    unsigned int line_idx;
+    unsigned int col_idx;
+    unsigned int arg_count;
+    char** arg_vect;
+    int current;
+    OptionConfig_T* options;
+} StreamContext_T;
+
+static void opts_init_context( StreamContext_T* ctx, int argc, char** argv );
+static void opts_parse_short_option( StreamContext_T* ctx );
+static void opts_parse_long_option( StreamContext_T* ctx );
+static char* opts_parse_optarg(StreamContext_T* ctx, char* opt_name);
+static void opts_parse_argument( StreamContext_T* ctx );
+static void opts_parse_error(const char* msg, const char* opt_name);
+
+static OptionConfig_T* opts_get_option_config( OptionConfig_T* opts, OptionType_T typ, char* name );
+static char* opts_next_token( StreamContext_T* ctx );
+static void opts_consume_ws( StreamContext_T* ctx );
+static char opts_next_char( StreamContext_T* ctx );
+static char* opts_append_char( char* str, char ch );
 static char* strclone(const char* p_old);
 
-Result_T* OPTS_ParseOptions( OptionConfig_T* opts, int argc, char** argv )
-{
-    // Setup the stream
+static void opts_add_option(char* name, char* tag, char* arg);
+static void opts_add_argument(char* arg);
+
+void opts_parse( OptionConfig_T* opts, int argc, char** argv ) {
+    /* Setup the stream */
     StreamContext_T ctx;
     ctx.options = opts;
-    OPTS_InitContext( &ctx, argc, argv );
+    opts_init_context( &ctx, argc, argv );
 
-    // Until we run out of characters
-    while( ctx.current != EOF )
-    {
-        OPTS_ConsumeWhitespace( &ctx );
-
-        // If we have an option
-        if ( '-' == ctx.current )
-        {
-            // And it's a long one
-            if( '-' == OPTS_NextCharacter( &ctx ) )
-            {
-                // Consume the second '-'
-                OPTS_NextCharacter( &ctx );
-
-                // Parse the option
-                OPTS_ParseLongOption( &ctx );
+    /* Until we run out of characters */
+    while (ctx.current != EOF) {
+        opts_consume_ws( &ctx );
+        /* If we have an option */
+        if ('-' == ctx.current) {
+            /* And it's a long one */
+            if ('-' == opts_next_char( &ctx )) {
+                /* Consume the second '-' */
+                opts_next_char( &ctx );
+                /* Parse the option */
+                opts_parse_long_option( &ctx );
+            } else {
+                /* Parse the option */
+                opts_parse_short_option( &ctx );
             }
-            // Or a short one
-            else
-            {
-                // Parse the option
-                OPTS_ParseShortOption( &ctx );
-            }
-        }
-        // Or we have a floating argument
-        else
-        {
-            OPTS_ParseArgument( &ctx );
+        } else {
+            opts_parse_argument( &ctx );
         }
     }
-
-    return ctx.results;
 }
 
-void OPTS_InitContext( StreamContext_T* ctx, int argc, char** argv )
-{
+void opts_reset(void) {
+    while (Options != NULL) {
+        entry_t* entry = Options;
+        option_t* opt  = (option_t*)entry->value;
+        Options = entry->next;
+        free(opt->name);
+        free(opt->tag);
+        if(opt->name != opt->value)
+            free(opt->value);
+        free(opt);
+        free(entry);
+    }
+
+    while (Arguments != NULL) {
+        entry_t* entry = Arguments;
+        char* arg  = (char*)entry->value;
+        Arguments = entry->next;
+        free(arg);
+        free(entry);
+    }
+}
+
+static void opts_init_context( StreamContext_T* ctx, int argc, char** argv ) {
     // Setup the char stream
     ctx->line_idx  = 0;
     ctx->col_idx   = -1;
     ctx->arg_count = argc;
     ctx->arg_vect  = argv;
-    (void)OPTS_NextCharacter( ctx ); // Loads up the first char
-
-    // Setup the results object
-    ctx->results = (Result_T*)malloc( sizeof( Result_T ) );
-    ctx->results->options = (OptionList_T*)malloc( sizeof( OptionList_T ) );
-    ctx->results->options->head = NULL;
-    ctx->results->options->tail = NULL;
-    ctx->results->arguments = (ArgumentList_T*)malloc( sizeof( ArgumentList_T ) );
-    ctx->results->arguments->head = NULL;
-    ctx->results->arguments->tail = NULL;
+    (void)opts_next_char( ctx ); // Loads up the first char
 }
 
-void OPTS_ParseShortOption( StreamContext_T* ctx )
-{
+static void opts_parse_short_option( StreamContext_T* ctx ) {
     // Get Config
     char opt_name[2] = { ctx->current, '\0' };
-    OptionConfig_T* config = OPTS_GetOptConfig( ctx->options, SHORT, opt_name );
-    if( config != NULL )
-    {
+    OptionConfig_T* config = opts_get_option_config( ctx->options, SHORT, opt_name );
+    if (config != NULL) {
         char* opt_arg = NULL;
-        (void)OPTS_NextCharacter( ctx );
-        if( 1 == config->has_arg )
-        {
-            OPTS_ConsumeWhitespace( ctx );
-            if( ('-' == ctx->current) || (EOF  == ctx->current) )
-            {
-                printf("Expected an argument for option '%s'\n", opt_name);
-                exit(1);
-            }
-            opt_arg = OPTS_NextToken( ctx );
-        }
-        else if( (' ' != ctx->current) && (EOF != ctx->current) )
-        {
-            OPTS_ParseShortOption( ctx );
-        }
-        OPTS_AddOption( ctx->results, opt_name, opt_arg );
-    }
-    else
-    {
-        printf("Unknown Option '%s'\n", opt_name);
-        exit(1);
+        (void)opts_next_char( ctx );
+        if (config->has_arg)
+            opt_arg = opts_parse_optarg( ctx, opt_name );
+        else if ((' ' != ctx->current) && (EOF != ctx->current))
+            opts_parse_short_option( ctx );
+        opts_add_option( strclone(opt_name), config->tag, opt_arg );
+    } else {
+        opts_parse_error("Unknown Option", opt_name);
     }
 }
 
-void OPTS_ParseLongOption( StreamContext_T* ctx )
-{
-    char* opt_name = OPTS_NextToken( ctx );
-    OptionConfig_T* config = OPTS_GetOptConfig( ctx->options, LONG, opt_name );
-    if( config != NULL )
-    {
+static void opts_parse_long_option( StreamContext_T* ctx ) {
+    char* opt_name = opts_next_token( ctx );
+    OptionConfig_T* config = opts_get_option_config( ctx->options, LONG, opt_name );
+    if (config != NULL) {
         char* opt_arg = NULL;
-        if( 1 == config->has_arg )
-        {
-            OPTS_ConsumeWhitespace( ctx );
-            if( ('-' == ctx->current) || (EOF == ctx->current) )
-            {
-                printf("Expected an argument for option '%s'\n", opt_name);
-                exit(1);
-            }
-            opt_arg = OPTS_NextToken( ctx );
-        }
-        OPTS_AddOption( ctx->results, opt_name, opt_arg );
-    }
-    else
-    {
-        printf("Unknown Option '%s'\n", opt_name);
-        exit(1);
+        if (config->has_arg)
+            opt_arg = opts_parse_optarg( ctx, opt_name );
+        opts_add_option( opt_name, config->tag, opt_arg );
+    } else {
+        opts_parse_error("Unknown Option", opt_name);
     }
 }
 
-void OPTS_ParseArgument( StreamContext_T* ctx )
-{
-    char* arg_val = OPTS_NextToken( ctx );
-    if( NULL != arg_val )
-    {
-        Argument_T* arg = (Argument_T*)malloc( sizeof( Argument_T ) );
-        arg->val  = arg_val;
-        arg->next = NULL;
-        if( ctx->results->arguments->head == NULL )
-        {
-            ctx->results->arguments->head = arg;
-            ctx->results->arguments->tail = arg;
-        }
-        else
-        {
-            ctx->results->arguments->tail->next = arg;
-            ctx->results->arguments->tail = arg;
-        }
-    }
+static char* opts_parse_optarg(StreamContext_T* ctx, char* opt_name) {
+    opts_consume_ws( ctx );
+    if (('-' == ctx->current) || (EOF == ctx->current))
+        opts_parse_error("Expected an argument, none received", opt_name);
+    return opts_next_token( ctx );
 }
 
-OptionConfig_T* OPTS_GetOptConfig( OptionConfig_T* opts, OptionType_T typ, char* name )
-{
+static void opts_parse_error(const char* msg, const char* opt_name) {
+    fprintf(stderr, "Option '%s' : %s\n", opt_name, msg);
+    exit(1);
+}
+
+static void opts_parse_argument( StreamContext_T* ctx ) {
+    char* arg_val = opts_next_token( ctx );
+    if (NULL != arg_val)
+        opts_add_argument(arg_val);
+}
+
+
+
+static OptionConfig_T* opts_get_option_config( OptionConfig_T* opts, OptionType_T type, char* name ) {
     OptionConfig_T* cfg = NULL;
     int i = 0;
-    while( opts[i].type != END )
-    {
-        if( (opts[i].type == typ) && (0 == strcmp(opts[i].name, name)) )
-        {
+    while( opts[i].name != NULL ) {
+        OptionType_T curr_type = (strlen(opts[i].name) > 1) ? LONG : SHORT;
+        if ((curr_type == type) && (0 == strcmp(opts[i].name, name))) {
             cfg = &(opts[i]);
             break;
         }
@@ -160,90 +167,55 @@ OptionConfig_T* OPTS_GetOptConfig( OptionConfig_T* opts, OptionType_T typ, char*
     return cfg;
 }
 
-char* OPTS_NextToken( StreamContext_T* ctx )
-{
+static char* opts_next_token( StreamContext_T* ctx ) {
     char* tok = NULL;
 
-    OPTS_ConsumeWhitespace( ctx );
-    if ( EOF != ctx->current )
-    {
+    opts_consume_ws( ctx );
+    if (EOF != ctx->current) {
         // Setup the string
         tok = (char*)malloc(2);
         tok[0] = ctx->current;
         tok[1] = '\0';
 
-        (void)OPTS_NextCharacter( ctx );
-        while( (EOF != ctx->current) && (' ' != ctx->current) )
-        {
-            tok = OPTS_AppendCharacter( tok, ctx->current );
-            (void)OPTS_NextCharacter( ctx );
+        (void)opts_next_char( ctx );
+        while ((EOF != ctx->current) && (' ' != ctx->current)) {
+            tok = opts_append_char( tok, ctx->current );
+            (void)opts_next_char( ctx );
         }
     }
     return tok;
 }
 
-void OPTS_AddOption( Result_T* res, char* name, char* arg )
-{
-    if( (NULL != res) && (NULL != res->options) )
-    {
-        Option_T* opt = (Option_T*)malloc( sizeof( Option_T ) );
-        opt->key = strclone( name );
-        opt->val = arg;
-        opt->next = NULL;
-        if( res->options->head == NULL )
-        {
-            res->options->head = opt;
-            res->options->tail = opt;
-        }
-        else
-        {
-            res->options->tail->next = opt;
-            res->options->tail = opt;
-        }
-    }
+static void opts_consume_ws( StreamContext_T* ctx ) {
+    while (' ' == ctx->current)
+        (void)opts_next_char( ctx );
 }
 
-void OPTS_ConsumeWhitespace( StreamContext_T* ctx )
-{
-    while( ' ' == ctx->current )
-    {
-        (void)OPTS_NextCharacter( ctx );
-    }
-}
-
-#include <stdio.h>
-char OPTS_NextCharacter( StreamContext_T* ctx )
-{
+static char opts_next_char( StreamContext_T* ctx ) {
     char current = EOF;
     ctx->current = EOF;
 
-    if( ctx->line_idx < ctx->arg_count )
-    {
+    if (ctx->line_idx < ctx->arg_count) {
         ctx->col_idx++;
-
-        if( ctx->line_idx < ctx->arg_count )
-        {
+        if (ctx->line_idx < ctx->arg_count) {
             char temp = ctx->arg_vect[ ctx->line_idx ][ ctx->col_idx ];
-            if( temp == '\0' )
-            {
+            if (temp == '\0') {
                 ctx->col_idx = -1;
                 ctx->line_idx++;
                 current = ' ';
                 ctx->current = current;
-            }
-            else
-            {
+            } else {
                 temp = (temp == '=') ? ' ' : temp;
                 current = temp;
                 ctx->current = current;
             }
         }
     }
+
     return current;
 }
 
-char* OPTS_AppendCharacter( char* str, char ch )
-{
+static char* opts_append_char( char* str, char ch ) {
     unsigned int new_size = strlen( str ) + 2;
     str = (char*)realloc( str, new_size );
     str[ new_size - 2 ] = ch;
@@ -251,12 +223,69 @@ char* OPTS_AppendCharacter( char* str, char ch )
     return str;
 }
 
-
 static char* strclone(const char* p_old) {
     size_t length = strlen(p_old);
     char* p_str = (char*)malloc(length+1);
     memcpy(p_str, p_old, length);
     p_str[length] = '\0';
     return p_str;
+}
+
+/*****************************************************************************/
+
+static void opts_add_option(char* name, char* tag, char* arg) {
+    option_t* option = (option_t*)malloc(sizeof(option_t));
+    option->name     = name;
+    option->tag      = strclone(tag);
+    option->value    = (NULL == arg) ? name : arg;
+    entry_t* entry   = (entry_t*)malloc(sizeof(entry_t));
+    entry->value     = (void*)option;
+    entry->next      = Options;
+    Options          = entry;
+}
+
+static void opts_add_argument(char* arg_val) {
+    entry_t* entry = (entry_t*)malloc(sizeof(entry_t));
+    entry->value   = (void*)arg_val;
+    entry->next    = Arguments;
+    Arguments      = entry;
+}
+
+/*****************************************************************************/
+option_t* find_option(const char* name, const char* tag) {
+    option_t* p_opt = NULL;
+    entry_t* current = Options;
+    while (current != NULL) {
+        option_t* curr_opt = (option_t*)current->value;
+        if (((NULL == name) || (0 == strcmp(name, curr_opt->name))) &&
+            ((NULL == tag)  || (0 == strcmp(tag,  curr_opt->tag)))) {
+            p_opt = curr_opt;
+            break;
+        }
+        current = current->next;
+    }
+    return p_opt;
+}
+
+bool opts_is_set(const char* name, const char* tag)
+{
+    return (NULL != find_option(name,tag));
+}
+
+const char* opts_get_value(const char* name, const char* tag)
+{
+    option_t* p_opt = find_option(name,tag);
+    return (NULL == p_opt) ? NULL : p_opt->value;
+}
+
+size_t opts_num_args(void)
+{
+    return 0;
+}
+
+const char* opts_get_arg(size_t index)
+{
+    (void)index;
+    return NULL;
 }
 

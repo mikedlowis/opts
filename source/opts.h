@@ -1,81 +1,31 @@
 #ifndef OPTS_H
 #define OPTS_H
 
-typedef struct Option_T {
-    char* key;
-    char* val;
-    struct Option_T* next;
-} Option_T;
-
-typedef struct OptionList {
-    Option_T* head;
-    Option_T* tail;
-} OptionList_T;
-
-typedef struct Argument_T {
-    char* val;
-    struct Argument_T* next;
-} Argument_T;
-
-typedef struct ArgumentList {
-    Argument_T* head;
-    Argument_T* tail;
-} ArgumentList_T;
-
-typedef struct Result_T {
-    ArgumentList_T* arguments;
-    OptionList_T* options;
-} Result_T;
-
-typedef enum {
-    LONG,
-    SHORT,
-    END
-} OptionType_T;
-
-typedef struct OptionConfig_T {
-    unsigned int type;
-    char* name;
-    char* dest;
-    int has_arg;
-    char* desc;
-} OptionConfig_T;
-
-typedef struct {
-    unsigned int line_idx;
-    unsigned int col_idx;
-    unsigned int arg_count;
-    char** arg_vect;
-    char current;
-    OptionConfig_T* options;
-    Result_T* results;
-} StreamContext_T;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-Result_T* OPTS_ParseOptions( OptionConfig_T* opts, int argc, char** argv );
+#include <stdbool.h>
+#include <stddef.h>
 
-void OPTS_InitContext( StreamContext_T* ctx, int argc, char** argv );
+typedef struct OptionConfig_T {
+    char* name;
+    bool has_arg;
+    char* tag;
+    char* desc;
+} OptionConfig_T;
 
-void OPTS_ParseShortOption( StreamContext_T* ctx );
+void opts_parse( OptionConfig_T* opts, int argc, char** argv );
 
-void OPTS_ParseLongOption( StreamContext_T* ctx );
+void opts_reset(void);
 
-void OPTS_ParseArgument( StreamContext_T* ctx );
+bool opts_is_set(const char* name, const char* tag);
 
-OptionConfig_T* OPTS_GetOptConfig( OptionConfig_T* opts, OptionType_T typ, char* name );
+const char* opts_get_value(const char* name, const char* tag);
 
-char* OPTS_NextToken( StreamContext_T* ctx );
+size_t opts_num_args(void);
 
-void OPTS_AddOption( Result_T* res, char* name, char* arg );
-
-void OPTS_ConsumeWhitespace( StreamContext_T* ctx );
-
-char OPTS_NextCharacter( StreamContext_T* ctx );
-
-char* OPTS_AppendCharacter( char* str, char ch );
+const char* opts_get_arg(size_t index);
 
 #ifdef __cplusplus
 }
