@@ -13,12 +13,13 @@
 // Sample Option Configuration
 //-----------------------------------------------------------------------------
 OptionConfig_T Options_Config[] = {
-    { (char*)"a",   false, (char*)"test_a", (char*)"A simple test option" },
-    { (char*)"b",   true,  (char*)"test_b", (char*)"A simple test option" },
-    { (char*)"c",   false, (char*)"test_c", (char*)"A simple test option" },
-    { (char*)"foo", false, (char*)"test_d", (char*)"A simple test option" },
-    { (char*)"bar", true,  (char*)"test_e", (char*)"A simple test option" },
-    { (char*)NULL,  false, (char*)NULL,     (char*)NULL }
+    { "a",   false, "test_a", "A simple test option" },
+    { "b",   true,  "test_b", "A simple test option" },
+    { "c",   false, "test_c", "A simple test option" },
+    { "foo", false, "opttag", "A simple test option" },
+    { "bar", true,  "test_e", "A simple test option" },
+    { "baz", false, "opttag", "A simple test option" },
+    { NULL,  false, NULL,     NULL }
 };
 
 //-----------------------------------------------------------------------------
@@ -246,188 +247,84 @@ TEST_SUITE(Opts) {
         CHECK_DOES_NOT_EXIT()
         {
             opts_parse( Options_Config, 1, args );
+            const char** args = opts_arguments();
+            CHECK(0 == strcmp("baz1", args[0]));
+            CHECK(NULL == args[1]);
+            free(args);
         }
         opts_reset();
     }
 
+    TEST(Verify_ParseOptions_Parses_Multiple_Floating_Arguments)
+    {
+        char* args[] = { "baz1", "baz2" };
 
+        CHECK_DOES_NOT_EXIT()
+        {
+            opts_parse( Options_Config, 2, args );
+            const char** args = opts_arguments();
+            CHECK(0 == strcmp("baz2", args[0]));
+            CHECK(0 == strcmp("baz1", args[1]));
+            CHECK(NULL == args[2]);
+            free(args);
+        }
+        opts_reset();
+    }
 
+    TEST(Verify_Select_returns_the_matching_option_by_name)
+    {
+        char* args[] = { "-a", "--foo", "-c" };
+        CHECK_DOES_NOT_EXIT()
+        {
+            opts_parse( Options_Config, 3, args );
+            const char** opts = opts_select("c", NULL);
+            CHECK(0 == strcmp("c", opts[0]));
+            CHECK(NULL == opts[1]);
+            free(opts);
+        }
+        opts_reset();
+    }
 
+    TEST(Verify_Select_returns_the_matching_option_by_tag)
+    {
+        char* args[] = { "-a", "--foo", "-c" };
+        CHECK_DOES_NOT_EXIT()
+        {
+            opts_parse( Options_Config, 3, args );
+            const char** opts = opts_select(NULL, "test_c");
+            CHECK(0 == strcmp("c", opts[0]));
+            CHECK(NULL == opts[1]);
+            free(opts);
+        }
+        opts_reset();
+    }
 
+    TEST(Verify_Select_returns_the_matching_option_by_name_and_tag)
+    {
+        char* args[] = { "-a", "--foo", "-c", "--baz" };
+        CHECK_DOES_NOT_EXIT()
+        {
+            opts_parse( Options_Config, 4, args );
+            const char** opts = opts_select("baz", "opttag");
+            CHECK(0 == strcmp("baz", opts[0]));
+            CHECK(NULL == opts[1]);
+            free(opts);
+        }
+        opts_reset();
+    }
 
-
-
-
-
-
-
-//    TEST(Verify_ParseOptions_exits_when_a_short_option_lacks_the_required_option)
-//    {
-//        Result_T* results;
-//        int exit_code = 0;
-//        char* args[] = { (char*)"-b-" };
-//
-//        exit_code = setjmp( Exit_Point );
-//        if( 0 == exit_code ) {
-//            results = opts_parse( Options_Config, 1, args );
-//            // If we fail to call exit then this breaks our test
-//            CHECK( false );
-//        } else {
-//            CHECK( 1 == exit_code );
-//        }
-//    }
-//
-//    TEST(Verify_ParseOptions_exits_when_a_short_option_with_no_accompanying_option)
-//    {
-//        Result_T* results;
-//        int exit_code = 0;
-//        char* args[] = { (char*)"-b" };
-//
-//        exit_code = setjmp( Exit_Point );
-//        if( 0 == exit_code ) {
-//            results = opts_parse( Options_Config, 1, args );
-//            // If we fail to call exit then this breaks our test
-//            CHECK( false );
-//        } else {
-//            CHECK( 1 == exit_code );
-//        }
-//    }
-//
-//    TEST(Verify_ParseOptions_errors_on_unknown_option)
-//    {
-//        Result_T* results;
-//        int exit_code = 0;
-//        char* args[] = { (char*)"-z" };
-//
-//        exit_code = setjmp( Exit_Point );
-//        if( 0 == exit_code ) {
-//            results = opts_parse( Options_Config, 1, args );
-//            // If we fail to call exit then this breaks our test
-//            CHECK( false );
-//        } else {
-//            CHECK( 1 == exit_code );
-//        }
-//    }
-//
-//    TEST(Verify_ParseOptions_Parses_short_option_group)
-//    {
-//        char* args[] = { (char*)"-aa" };
-//
-//        CHECK_DOES_NOT_EXIT()
-//        {
-//            Result_T* results = opts_parse( Options_Config, 1, args );
-//
-//            OptionList_T* result = results->options;
-//            CHECK( NULL != result );
-//            CHECK( NULL != result->head );
-//            CHECK( NULL != result->tail );
-//            CHECK( result->head != result->tail );
-//            CHECK( NULL != result->head->key );
-//            CHECK( 0 == strcmp( result->head->key, "a" ) );
-//            CHECK( NULL == result->head->val );
-//            CHECK( NULL != result->tail->key );
-//            CHECK( 0 == strcmp( result->tail->key, "a" ) );
-//            CHECK( NULL == result->tail->val );
-//        }
-//    }
-//
-//    TEST(Verify_ParseOptions_Parses_short_option_group_with_more_than_2_options)
-//    {
-//        char* args[] = { (char*)"-aaaa" };
-//
-//        CHECK_DOES_NOT_EXIT()
-//        {
-//            Result_T* results = opts_parse( Options_Config, 1, args );
-//
-//            OptionList_T* result = results->options;
-//            CHECK( NULL != result );
-//            CHECK( NULL != result->head );
-//            CHECK( NULL != result->tail );
-//            CHECK( result->head != result->tail );
-//        }
-//    }
-//
-//    TEST(Verify_ParseOptions_Parses_short_option_group_with_the_last_having_an_arg)
-//    {
-//        char* args[] = { (char*)"-ab5" };
-//
-//        CHECK_DOES_NOT_EXIT()
-//        {
-//            Result_T* results = opts_parse( Options_Config, 1, args );
-//            OptionList_T* result = results->options;
-//            CHECK( NULL != result );
-//            CHECK( NULL != result->head );
-//            CHECK( NULL != result->tail );
-//            CHECK( result->head != result->tail );
-//            CHECK( NULL != result->head->key );
-//            CHECK( 0 == strcmp( result->head->key, "b" ) );
-//            CHECK( NULL != result->head->val );
-//            CHECK( 0 == strcmp( result->head->val, "5" ) );
-//            CHECK( NULL != result->tail->key );
-//            CHECK( 0 == strcmp( result->tail->key, "a" ) );
-//            CHECK( NULL == result->tail->val );
-//        }
-//    }
-//
-//    TEST(Verify_ParseOptions_Parses_A_Short_Option_With_No_Param)
-//    {
-//        char* args[] = { (char*)"-a" };
-//
-//        CHECK_DOES_NOT_EXIT()
-//        {
-//            Result_T* results = opts_parse( Options_Config, 1, args );
-//
-//            OptionList_T* result = results->options;
-//            CHECK( NULL != result );
-//            CHECK( NULL != result->head );
-//            CHECK( NULL != result->tail );
-//            CHECK( result->head == result->tail );
-//            CHECK( NULL != result->tail->key );
-//            CHECK( 0 == strcmp( result->tail->key, "a" ) );
-//            CHECK( NULL == result->tail->val );
-//            CHECK( NULL == result->tail->next );
-//        }
-//    }
-//
-//    TEST(Verify_ParseOptions_Parses_A_Short_Option_With_A_Param_And_A_Space)
-//    {
-//        char* args[] = { (char*)"-b", (char*)"5" };
-//
-//        CHECK_DOES_NOT_EXIT()
-//        {
-//            Result_T* results = opts_parse( Options_Config, 2, args );
-//
-//            OptionList_T* result = results->options;
-//            CHECK( NULL != result );
-//            CHECK( NULL != result->head );
-//            CHECK( NULL != result->tail );
-//            CHECK( result->head == result->tail );
-//            CHECK( NULL != result->tail->key );
-//            CHECK( 0 == strcmp( result->tail->key, "b" ) );
-//            CHECK( NULL != result->tail->val );
-//            CHECK( 0 == strcmp( result->tail->val, "5" ) );
-//            CHECK( NULL == result->tail->next );
-//        }
-//    }
-//
-//    TEST(Verify_ParseOptions_Parses_A_Short_Option_With_A_Param_And_No_Space)
-//    {
-//        char* args[] = { (char*)"-b5" };
-//
-//        CHECK_DOES_NOT_EXIT()
-//        {
-//            Result_T* results = opts_parse( Options_Config, 1, args );
-//
-//            OptionList_T* result = results->options;
-//            CHECK( NULL != result );
-//            CHECK( NULL != result->head );
-//            CHECK( NULL != result->tail );
-//            CHECK( result->head == result->tail );
-//            CHECK( NULL != result->tail->key );
-//            CHECK( 0 == strcmp( result->tail->key, "b" ) );
-//            CHECK( NULL != result->tail->val );
-//            CHECK( 0 == strcmp( result->tail->val, "5" ) );
-//            CHECK( NULL == result->tail->next );
-//        }
-//    }
+    TEST(Verify_Select_returns_the_matching_options_by_tag)
+    {
+        char* args[] = { "-a", "--foo", "-c", "--baz" };
+        CHECK_DOES_NOT_EXIT()
+        {
+            opts_parse( Options_Config, 4, args );
+            const char** opts = opts_select(NULL, "opttag");
+            CHECK(0 == strcmp("baz", opts[0]));
+            CHECK(0 == strcmp("foo", opts[1]));
+            CHECK(NULL == opts[2]);
+            free(opts);
+        }
+        opts_reset();
+    }
 }

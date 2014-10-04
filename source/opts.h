@@ -23,9 +23,9 @@ bool opts_is_set(const char* name, const char* tag);
 
 const char* opts_get_value(const char* name, const char* tag);
 
-size_t opts_num_args(void);
+const char** opts_select(const char* name, const char* tag);
 
-const char* opts_get_arg(size_t index);
+const char** opts_arguments(void);
 
 #ifdef __cplusplus
 }

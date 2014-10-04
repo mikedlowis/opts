@@ -14,9 +14,6 @@ typedef struct entry_t {
     struct entry_t* next;
 } entry_t;
 
-static entry_t* Options   = NULL;
-static entry_t* Arguments = NULL;
-
 typedef enum { LONG, SHORT } OptionType_T;
 
 typedef struct {
@@ -28,12 +25,14 @@ typedef struct {
     OptionConfig_T* options;
 } StreamContext_T;
 
-static void opts_init_context( StreamContext_T* ctx, int argc, char** argv );
+static entry_t* Options   = NULL;
+static entry_t* Arguments = NULL;
+
 static void opts_parse_short_option( StreamContext_T* ctx );
 static void opts_parse_long_option( StreamContext_T* ctx );
 static char* opts_parse_optarg(StreamContext_T* ctx, char* opt_name);
 static void opts_parse_argument( StreamContext_T* ctx );
-static void opts_parse_error(const char* msg, const char* opt_name);
+static void opts_parse_error(const char* msg, char* opt_name);
 
 static OptionConfig_T* opts_get_option_config( OptionConfig_T* opts, OptionType_T typ, char* name );
 static char* opts_next_token( StreamContext_T* ctx );
@@ -48,8 +47,12 @@ static void opts_add_argument(char* arg);
 void opts_parse( OptionConfig_T* opts, int argc, char** argv ) {
     /* Setup the stream */
     StreamContext_T ctx;
-    ctx.options = opts;
-    opts_init_context( &ctx, argc, argv );
+    ctx.line_idx  = 0;
+    ctx.col_idx   = -1;
+    ctx.arg_count = argc;
+    ctx.arg_vect  = argv;
+    ctx.options   = opts;
+    (void)opts_next_char( &ctx ); /* Loads up the first char */
 
     /* Until we run out of characters */
     while (ctx.current != EOF) {
@@ -94,18 +97,9 @@ void opts_reset(void) {
     }
 }
 
-static void opts_init_context( StreamContext_T* ctx, int argc, char** argv ) {
-    // Setup the char stream
-    ctx->line_idx  = 0;
-    ctx->col_idx   = -1;
-    ctx->arg_count = argc;
-    ctx->arg_vect  = argv;
-    (void)opts_next_char( ctx ); // Loads up the first char
-}
-
 static void opts_parse_short_option( StreamContext_T* ctx ) {
-    // Get Config
-    char opt_name[2] = { ctx->current, '\0' };
+    char opt[2] = { ctx->current, '\0' };
+    char* opt_name = strclone(opt);
     OptionConfig_T* config = opts_get_option_config( ctx->options, SHORT, opt_name );
     if (config != NULL) {
         char* opt_arg = NULL;
@@ -114,7 +108,7 @@ static void opts_parse_short_option( StreamContext_T* ctx ) {
             opt_arg = opts_parse_optarg( ctx, opt_name );
         else if ((' ' != ctx->current) && (EOF != ctx->current))
             opts_parse_short_option( ctx );
-        opts_add_option( strclone(opt_name), config->tag, opt_arg );
+        opts_add_option( opt_name, config->tag, opt_arg );
     } else {
         opts_parse_error("Unknown Option", opt_name);
     }
@@ -140,8 +134,9 @@ static char* opts_parse_optarg(StreamContext_T* ctx, char* opt_name) {
     return opts_next_token( ctx );
 }
 
-static void opts_parse_error(const char* msg, const char* opt_name) {
+static void opts_parse_error(const char* msg, char* opt_name) {
     fprintf(stderr, "Option '%s' : %s\n", opt_name, msg);
+    free(opt_name);
     exit(1);
 }
 
@@ -150,8 +145,6 @@ static void opts_parse_argument( StreamContext_T* ctx ) {
     if (NULL != arg_val)
         opts_add_argument(arg_val);
 }
-
-
 
 static OptionConfig_T* opts_get_option_config( OptionConfig_T* opts, OptionType_T type, char* name ) {
     OptionConfig_T* cfg = NULL;
@@ -252,6 +245,7 @@ static void opts_add_argument(char* arg_val) {
 }
 
 /*****************************************************************************/
+
 option_t* find_option(const char* name, const char* tag) {
     option_t* p_opt = NULL;
     entry_t* current = Options;
@@ -267,25 +261,46 @@ option_t* find_option(const char* name, const char* tag) {
     return p_opt;
 }
 
-bool opts_is_set(const char* name, const char* tag)
-{
+bool opts_is_set(const char* name, const char* tag) {
     return (NULL != find_option(name,tag));
 }
 
-const char* opts_get_value(const char* name, const char* tag)
-{
+const char* opts_get_value(const char* name, const char* tag) {
     option_t* p_opt = find_option(name,tag);
     return (NULL == p_opt) ? NULL : p_opt->value;
 }
 
-size_t opts_num_args(void)
-{
-    return 0;
+const char** opts_select(const char* name, const char* tag) {
+    size_t index = 0;
+    const char** ret = (const char**)malloc(sizeof(const char*));
+    ret[index] = NULL;
+
+    entry_t* current = Options;
+    while (current != NULL) {
+        option_t* curr_opt = (option_t*)current->value;
+        if (((NULL == name) || (0 == strcmp(name, curr_opt->name))) &&
+            ((NULL == tag)  || (0 == strcmp(tag,  curr_opt->tag)))) {
+            ret = (const char**)realloc(ret, (index+2)*sizeof(const char*));
+            ret[index++] = curr_opt->value;
+            ret[index]   = NULL;
+        }
+        current = current->next;
+    }
+
+    return ret;
 }
 
-const char* opts_get_arg(size_t index)
-{
-    (void)index;
-    return NULL;
+const char** opts_arguments(void) {
+    size_t index = 0;
+    const char** ret = (const char**)malloc(sizeof(const char*));
+    entry_t* entry = Arguments;
+    while (NULL != entry) {
+        ret = (const char**)realloc(ret, (index+2)*sizeof(const char*));
+        ret[index++] = (const char*)entry->value;
+        ret[index]   = NULL;
+        entry = entry->next;
+    }
+    return ret;
 }
+
 
