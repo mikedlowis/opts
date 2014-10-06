@@ -12,7 +12,7 @@
 //-----------------------------------------------------------------------------
 // Sample Option Configuration
 //-----------------------------------------------------------------------------
-OptionConfig_T Options_Config[] = {
+opts_cfg_t Options_Config[] = {
     { "a",   false, "test_a", "A simple test option" },
     { "b",   true,  "test_b", "A simple test option" },
     { "c",   false, "test_c", "A simple test option" },

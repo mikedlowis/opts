@@ -22,7 +22,7 @@ typedef struct {
     unsigned int arg_count;
     char** arg_vect;
     int current;
-    OptionConfig_T* options;
+    opts_cfg_t* options;
 } StreamContext_T;
 
 static entry_t* Options   = NULL;
@@ -34,7 +34,7 @@ static char* opts_parse_optarg(StreamContext_T* ctx, char* opt_name);
 static void opts_parse_argument( StreamContext_T* ctx );
 static void opts_parse_error(const char* msg, char* opt_name);
 
-static OptionConfig_T* opts_get_option_config( OptionConfig_T* opts, OptionType_T typ, char* name );
+static opts_cfg_t* opts_get_option_config( opts_cfg_t* opts, OptionType_T typ, char* name );
 static char* opts_next_token( StreamContext_T* ctx );
 static void opts_consume_ws( StreamContext_T* ctx );
 static char opts_next_char( StreamContext_T* ctx );
@@ -44,7 +44,7 @@ static char* strclone(const char* p_old);
 static void opts_add_option(char* name, char* tag, char* arg);
 static void opts_add_argument(char* arg);
 
-void opts_parse( OptionConfig_T* opts, int argc, char** argv ) {
+void opts_parse( opts_cfg_t* opts, int argc, char** argv ) {
     /* Setup the stream */
     StreamContext_T ctx;
     ctx.line_idx  = 0;
@@ -100,7 +100,7 @@ void opts_reset(void) {
 static void opts_parse_short_option( StreamContext_T* ctx ) {
     char opt[2] = { ctx->current, '\0' };
     char* opt_name = strclone(opt);
-    OptionConfig_T* config = opts_get_option_config( ctx->options, SHORT, opt_name );
+    opts_cfg_t* config = opts_get_option_config( ctx->options, SHORT, opt_name );
     if (config != NULL) {
         char* opt_arg = NULL;
         (void)opts_next_char( ctx );
@@ -116,7 +116,7 @@ static void opts_parse_short_option( StreamContext_T* ctx ) {
 
 static void opts_parse_long_option( StreamContext_T* ctx ) {
     char* opt_name = opts_next_token( ctx );
-    OptionConfig_T* config = opts_get_option_config( ctx->options, LONG, opt_name );
+    opts_cfg_t* config = opts_get_option_config( ctx->options, LONG, opt_name );
     if (config != NULL) {
         char* opt_arg = NULL;
         if (config->has_arg)
@@ -146,8 +146,8 @@ static void opts_parse_argument( StreamContext_T* ctx ) {
         opts_add_argument(arg_val);
 }
 
-static OptionConfig_T* opts_get_option_config( OptionConfig_T* opts, OptionType_T type, char* name ) {
-    OptionConfig_T* cfg = NULL;
+static opts_cfg_t* opts_get_option_config( opts_cfg_t* opts, OptionType_T type, char* name ) {
+    opts_cfg_t* cfg = NULL;
     int i = 0;
     while( opts[i].name != NULL ) {
         OptionType_T curr_type = (strlen(opts[i].name) > 1) ? LONG : SHORT;
@@ -268,6 +268,10 @@ bool opts_is_set(const char* name, const char* tag) {
 const char* opts_get_value(const char* name, const char* tag) {
     option_t* p_opt = find_option(name,tag);
     return (NULL == p_opt) ? NULL : p_opt->value;
+}
+
+bool opts_equal(const char* name, const char* tag, const char* value) {
+    return (0 == strcmp(value, opts_get_value(name,tag)));
 }
 
 const char** opts_select(const char* name, const char* tag) {
