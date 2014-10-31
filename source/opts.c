@@ -307,4 +307,37 @@ const char** opts_arguments(void) {
     return ret;
 }
 
+/*****************************************************************************/
 
+static int opts_calc_padding(opts_cfg_t* opts) {
+    bool opts_have_args = false;
+    size_t sz = 0;
+    /* Figure out the longest option name */
+    while (NULL != opts->name) {
+        size_t name_sz = strlen(opts->name);
+        if (name_sz > sz) {
+            sz = name_sz;
+        }
+        if (opts->has_arg) {
+            opts_have_args = true;
+        }
+        opts++;
+    }
+    return sz + 4 + ((opts_have_args) ? 4 : 0);
+}
+
+void opts_print_help(FILE* ofile, opts_cfg_t* opts) {
+    int padding = opts_calc_padding(opts);
+    char*  buffer  = (char*)malloc(padding+1);
+    while (NULL != opts->name) {
+        if (1 == strlen(opts->name))
+            sprintf(buffer, " -%s", opts->name);
+        else
+            sprintf(buffer, " --%s", opts->name);
+        if (opts->has_arg) sprintf(&buffer[strlen(buffer)], "=ARG ");
+        fprintf(ofile, "%-*s%s\n", padding, buffer, opts->desc);
+        opts++;
+    }
+    free(buffer);
+    exit(1);
+}
