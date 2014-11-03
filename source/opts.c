@@ -301,6 +301,7 @@ const char** opts_select(const char* name, const char* tag) {
 const char** opts_arguments(void) {
     size_t index = 0;
     const char** ret = (const char**)malloc(sizeof(const char*));
+    ret[0] = NULL;
     entry_t* entry = Arguments;
     while (NULL != entry) {
         ret = (const char**)realloc(ret, (index+2)*sizeof(const char*));
