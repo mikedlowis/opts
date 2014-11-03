@@ -50,10 +50,10 @@ TEST_SUITE(Opts) {
     //-------------------------------------------------------------------------
     TEST(Verify_ParseOptions_Parses_A_Long_Option_With_No_Param)
     {
-        char* args[] = { (char*)"--foo" };
+        char* args[] = { "prog", (char*)"--foo" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 1, args );
+            opts_parse( Options_Config, 2, args );
             CHECK(opts_is_set("foo", NULL));
         }
         opts_reset();
@@ -61,8 +61,20 @@ TEST_SUITE(Opts) {
 
     TEST(Verify_ParseOptions_Parses_A_Long_Option_With_A_Param_And_A_Space)
     {
-        char* args[] = { (char*)"--bar", (char*)"baz" };
+        char* args[] = { "prog", (char*)"--bar", (char*)"baz" };
 
+        CHECK_DOES_NOT_EXIT()
+        {
+            opts_parse( Options_Config, 3, args );
+            CHECK(opts_is_set("bar", NULL));
+            CHECK(0 == strcmp("baz", opts_get_value("bar", NULL)));
+        }
+        opts_reset();
+    }
+
+    TEST(Verify_ParseOptions_Parses_A_Long_Option_With_A_Param_And_An_Equals_Sign)
+    {
+        char* args[] = { "prog", (char*)"--bar=baz" };
         CHECK_DOES_NOT_EXIT()
         {
             opts_parse( Options_Config, 2, args );
@@ -72,26 +84,14 @@ TEST_SUITE(Opts) {
         opts_reset();
     }
 
-    TEST(Verify_ParseOptions_Parses_A_Long_Option_With_A_Param_And_An_Equals_Sign)
-    {
-        char* args[] = { (char*)"--bar=baz" };
-        CHECK_DOES_NOT_EXIT()
-        {
-            opts_parse( Options_Config, 1, args );
-            CHECK(opts_is_set("bar", NULL));
-            CHECK(0 == strcmp("baz", opts_get_value("bar", NULL)));
-        }
-        opts_reset();
-    }
-
     TEST(Verify_ParseOptions_Parses_a_long_option_with_a_missing_param)
     {
         int exit_code = 0;
-        char* args[] = { (char*)"--bar" };
+        char* args[] = { "prog", (char*)"--bar" };
 
         exit_code = setjmp( Exit_Point );
         if( 0 == exit_code ) {
-            opts_parse( Options_Config, 1, args );
+            opts_parse( Options_Config, 2, args );
             // If we fail to call exit then this breaks our test
             CHECK( false );
         } else {
@@ -103,11 +103,11 @@ TEST_SUITE(Opts) {
     TEST(Verify_ParseOptions_Parses_a_long_option_with_a_missing_param)
     {
         int exit_code = 0;
-        char* args[] = { (char*)"--bar-" };
+        char* args[] = { "prog", (char*)"--bar-" };
 
         exit_code = setjmp( Exit_Point );
         if( 0 == exit_code ) {
-            opts_parse( Options_Config, 1, args );
+            opts_parse( Options_Config, 2, args );
             // If we fail to call exit then this breaks our test
             CHECK( false );
         } else {
@@ -119,11 +119,11 @@ TEST_SUITE(Opts) {
     TEST(Verify_ParseOptions_exits_when_invalid_long_option)
     {
         int exit_code = 0;
-        char* args[] = { (char*)"--baz-" };
+        char* args[] = { "prog", (char*)"--baz-" };
 
         exit_code = setjmp( Exit_Point );
         if( 0 == exit_code ) {
-            opts_parse( Options_Config, 1, args );
+            opts_parse( Options_Config, 2, args );
             // If we fail to call exit then this breaks our test
             CHECK( false );
         } else {
@@ -134,10 +134,10 @@ TEST_SUITE(Opts) {
 
     TEST(Verify_ParseOptions_Parses_short_option_with_no_argument)
     {
-        char* args[] = { (char*)"-a" };
+        char* args[] = { "prog", (char*)"-a" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 1, args );
+            opts_parse( Options_Config, 2, args );
             CHECK(opts_is_set("a", NULL));
         }
         opts_reset();
@@ -145,10 +145,10 @@ TEST_SUITE(Opts) {
 
     TEST(Verify_ParseOptions_Parses_short_option_list_with_no_args)
     {
-        char* args[] = { (char*)"-ac" };
+        char* args[] = { "prog", (char*)"-ac" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 1, args );
+            opts_parse( Options_Config, 2, args );
             CHECK(opts_is_set("a", NULL));
             CHECK(opts_is_set("c", NULL));
         }
@@ -157,19 +157,7 @@ TEST_SUITE(Opts) {
 
     TEST(Verify_ParseOptions_Parses_a_short_option_with_an_argument)
     {
-        char* args[] = { (char*)"-bbaz" };
-        CHECK_DOES_NOT_EXIT()
-        {
-            opts_parse( Options_Config, 1, args );
-            CHECK(opts_is_set("b", NULL));
-            CHECK(0 == strcmp("baz", opts_get_value("b", NULL)));
-        }
-        opts_reset();
-    }
-
-    TEST(Verify_ParseOptions_Parses_a_short_option_with_an_argument_and_a_space)
-    {
-        char* args[] = { (char*)"-b", "baz" };
+        char* args[] = { "prog", (char*)"-bbaz" };
         CHECK_DOES_NOT_EXIT()
         {
             opts_parse( Options_Config, 2, args );
@@ -179,12 +167,24 @@ TEST_SUITE(Opts) {
         opts_reset();
     }
 
-    TEST(Verify_ParseOptions_Parses_a_short_option_with_an_argument_and_an_equals)
+    TEST(Verify_ParseOptions_Parses_a_short_option_with_an_argument_and_a_space)
     {
-        char* args[] = { (char*)"-b=baz" };
+        char* args[] = { "prog", (char*)"-b", "baz" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 1, args );
+            opts_parse( Options_Config, 3, args );
+            CHECK(opts_is_set("b", NULL));
+            CHECK(0 == strcmp("baz", opts_get_value("b", NULL)));
+        }
+        opts_reset();
+    }
+
+    TEST(Verify_ParseOptions_Parses_a_short_option_with_an_argument_and_an_equals)
+    {
+        char* args[] = { "prog", (char*)"-b=baz" };
+        CHECK_DOES_NOT_EXIT()
+        {
+            opts_parse( Options_Config, 2, args );
             CHECK(opts_is_set("b", NULL));
             CHECK(0 == strcmp("baz", opts_get_value("b", NULL)));
         }
@@ -195,11 +195,11 @@ TEST_SUITE(Opts) {
     TEST(Verify_ParseOptions_Parses_a_short_option_with_a_missing_param)
     {
         int exit_code = 0;
-        char* args[] = { (char*)"-b" };
+        char* args[] = { "prog", (char*)"-b" };
 
         exit_code = setjmp( Exit_Point );
         if( 0 == exit_code ) {
-            opts_parse( Options_Config, 1, args );
+            opts_parse( Options_Config, 2, args );
             // If we fail to call exit then this breaks our test
             CHECK( false );
         } else {
@@ -211,11 +211,11 @@ TEST_SUITE(Opts) {
     TEST(Verify_ParseOptions_Parses_a_short_option_with_a_missing_param)
     {
         int exit_code = 0;
-        char* args[] = { (char*)"-b-" };
+        char* args[] = { "prog", (char*)"-b-" };
 
         exit_code = setjmp( Exit_Point );
         if( 0 == exit_code ) {
-            opts_parse( Options_Config, 1, args );
+            opts_parse( Options_Config, 2, args );
             // If we fail to call exit then this breaks our test
             CHECK( false );
         } else {
@@ -227,11 +227,11 @@ TEST_SUITE(Opts) {
     TEST(Verify_ParseOptions_exits_when_invalid_short_option)
     {
         int exit_code = 0;
-        char* args[] = { (char*)"-d" };
+        char* args[] = { "prog", (char*)"-d" };
 
         exit_code = setjmp( Exit_Point );
         if( 0 == exit_code ) {
-            opts_parse( Options_Config, 1, args );
+            opts_parse( Options_Config, 2, args );
             // If we fail to call exit then this breaks our test
             CHECK( false );
         } else {
@@ -242,11 +242,11 @@ TEST_SUITE(Opts) {
 
     TEST(Verify_ParseOptions_Parses_A_Floating_Argument)
     {
-        char* args[] = { (char*)"baz1" };
+        char* args[] = { "prog", (char*)"baz1" };
 
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 1, args );
+            opts_parse( Options_Config, 2, args );
             const char** args = opts_arguments();
             CHECK(0 == strcmp("baz1", args[0]));
             CHECK(NULL == args[1]);
@@ -257,11 +257,11 @@ TEST_SUITE(Opts) {
 
     TEST(Verify_ParseOptions_Parses_Multiple_Floating_Arguments)
     {
-        char* args[] = { "baz1", "baz2" };
+        char* args[] = { "prog", "baz1", "baz2" };
 
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 2, args );
+            opts_parse( Options_Config, 3, args );
             const char** args = opts_arguments();
             CHECK(0 == strcmp("baz2", args[0]));
             CHECK(0 == strcmp("baz1", args[1]));
@@ -273,10 +273,10 @@ TEST_SUITE(Opts) {
 
     TEST(Verify_Select_returns_the_matching_option_by_name)
     {
-        char* args[] = { "-a", "--foo", "-c" };
+        char* args[] = { "prog", "-a", "--foo", "-c" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 3, args );
+            opts_parse( Options_Config, 4, args );
             const char** opts = opts_select("c", NULL);
             CHECK(0 == strcmp("c", opts[0]));
             CHECK(NULL == opts[1]);
@@ -287,10 +287,10 @@ TEST_SUITE(Opts) {
 
     TEST(Verify_Select_returns_the_matching_option_by_tag)
     {
-        char* args[] = { "-a", "--foo", "-c" };
+        char* args[] = { "prog", "-a", "--foo", "-c" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 3, args );
+            opts_parse( Options_Config, 4, args );
             const char** opts = opts_select(NULL, "test_c");
             CHECK(0 == strcmp("c", opts[0]));
             CHECK(NULL == opts[1]);
@@ -301,10 +301,10 @@ TEST_SUITE(Opts) {
 
     TEST(Verify_Select_returns_the_matching_option_by_name_and_tag)
     {
-        char* args[] = { "-a", "--foo", "-c", "--baz" };
+        char* args[] = { "prog", "-a", "--foo", "-c", "--baz" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 4, args );
+            opts_parse( Options_Config, 5, args );
             const char** opts = opts_select("baz", "opttag");
             CHECK(0 == strcmp("baz", opts[0]));
             CHECK(NULL == opts[1]);
@@ -315,10 +315,10 @@ TEST_SUITE(Opts) {
 
     TEST(Verify_Select_returns_the_matching_options_by_tag)
     {
-        char* args[] = { "-a", "--foo", "-c", "--baz" };
+        char* args[] = { "prog", "-a", "--foo", "-c", "--baz" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 4, args );
+            opts_parse( Options_Config, 5, args );
             const char** opts = opts_select(NULL, "opttag");
             CHECK(0 == strcmp("baz", opts[0]));
             CHECK(0 == strcmp("foo", opts[1]));
