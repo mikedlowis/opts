@@ -25,6 +25,7 @@ typedef struct {
     opts_cfg_t* options;
 } StreamContext_T;
 
+static const char* Program_Name = NULL;
 static entry_t* Options   = NULL;
 static entry_t* Arguments = NULL;
 
@@ -49,10 +50,13 @@ void opts_parse( opts_cfg_t* opts, int argc, char** argv ) {
     StreamContext_T ctx;
     ctx.line_idx  = 0;
     ctx.col_idx   = -1;
-    ctx.arg_count = argc;
-    ctx.arg_vect  = argv;
+    ctx.arg_count = argc-1;
+    ctx.arg_vect  = &argv[1];
     ctx.options   = opts;
     (void)opts_next_char( &ctx ); /* Loads up the first char */
+
+    /* Record the program name */
+    Program_Name = argv[0];
 
     /* Until we run out of characters */
     while (ctx.current != EOF) {
@@ -305,6 +309,10 @@ const char** opts_arguments(void) {
         entry = entry->next;
     }
     return ret;
+}
+
+const char* opts_prog_name(void) {
+    return Program_Name;
 }
 
 /*****************************************************************************/

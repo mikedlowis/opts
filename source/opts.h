@@ -29,6 +29,8 @@ const char** opts_select(const char* name, const char* tag);
 
 const char** opts_arguments(void);
 
+const char* opts_prog_name(void);
+
 void opts_print_help(FILE* ofile, opts_cfg_t* opts);
 
 #ifdef __cplusplus
