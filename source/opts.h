@@ -52,7 +52,10 @@ extern "C" {
 
 /** Structure representing an option to be parsed */
 typedef struct {
-    /** The name of the option as it will appear on the command line */
+    /** The name of the option as it will appear on the command line. If the
+     *  name is a single character in length the parse will treat it as a short
+     *  option and require a single dash. Otherwise, it is considered a long
+     *  option and will require double dashes */
     char* name;
     /** Flag indicating whether the option expects an argument or not */
     bool has_arg;

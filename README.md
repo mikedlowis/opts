@@ -1,15 +1,48 @@
 Opts
 ==============================================
 
-    Version:    0.1
     Created By: Michael D. Lowis
     Email:      mike@mdlowis.com
 
 About This Project
 ----------------------------------------------
+This project is an implementation of a very lightweight command-line options
+parser. It is capable of interpreting the Unix/GNU style command line
+argument flags. It is designed to be platform independent and can be used as
+a static library or directly as source.
 
-This project is an implementation of a very simple command-line options parser.
-It is capable of interpreting the Unix/GNU style command line argument flags.
+Design
+----------------------------------------------
+The library is designed to work like something of a database for your
+command line. At initialization time you feed in the arguments vector (your
+data records) and a list of option definitions (your schema). The library
+then parses the options and stores them internally for querying later.
+Several querying functions are provided that cover the most common use cases
+for options handling.
+
+All of the query functions take an option name and an option tag as
+parameters. These two arguments will be used to search the list of parsed
+options for any that match both parameters. In some cases only one of the
+parameters is needed for a query. To facilitate this, the query functions
+will interpret a NULL pointer to match everything. An example of this would
+be selecting all parsed options with the tag "foo":
+
+    const char** foo_lst = opts_select(NULL,"foo");
+
+In the example above, the NULL would match *all* parsed options and from that
+group only those having the tag "foo" would be returned. Another common
+scenario would be searching by parameter name:
+
+    const char** includes = opts_select("I", NULL);
+
+In this scenario all of the options that were parsed having the name 'I'
+would be returned regardless of their tag value. This would equate to all of
+the instances of '-I' that would occur on the command line for an invocation
+of gcc.
+
+With this design you should be able to let the library handle your options
+parsing while you focus on your application logic, using appropriate queries
+to change behavior where necessary.
 
 License
 ----------------------------------------------
@@ -19,56 +52,29 @@ license can be found in the LICENSE.md file.
 
 Requirements For Building
 ----------------------------------------------
-The only external dependencies currently required to build this library are
-Premake 4 and a toolchain that is supported by Premake.
+This project requires the following external tools to build successfully:
+
+* Ruby
+* Bundler
+* GCC or Clang
 
 Build Instructions
 ----------------------------------------------
-This project uses Premake 4 in order to generate cross-platform build scripts.
-The first step in building the library is to generate the build scripts for
-your system. Premake supports a variety of different build environments and you
-will need to select the one that you wish to use. To list the available targets
-simply run the following command:
+This project can be built by executing the following commands:
 
-    premake4 --help
+    bundle install
+    bundle exec rake
 
-You should then be presented with a list of options for premake with a section
-at the end that looks like this:
-
-    ACTIONS
-
-     clean             Remove all binaries and generated files
-     codeblocks        Generate Code::Blocks project files
-     codelite          Generate CodeLite project files
-     gmake             Generate GNU makefiles for POSIX, MinGW, and Cygwin
-     vs2002            Generate Microsoft Visual Studio 2002 project files
-     vs2003            Generate Microsoft Visual Studio 2003 project files
-     vs2005            Generate Microsoft Visual Studio 2005 project files
-     vs2008            Generate Microsoft Visual Studio 2008 project files
-     vs2010            Generate Visual Studio 2010 project files (experimental)
-     xcode3            Generate Apple Xcode 3 project files (experimental)
-
-This is the list of build script targets that are supported. To generate build
-scripts to use with GNU Make for instance, you could choose the gmake target
-by using the following command:
-
-    premake4 gmake
-
-Once the Make scripts are generated you can build the project and run all unit
-tests with the following command:
-
-    make
+After those two commands execute you should be left with a static library that
+you can use as you please.
 
 Project Files and Directories
 ----------------------------------------------
 
     build/         This is the directory where all output files will be placed.
-    docs/          Documentation for the language and the source code.
-    source/        The source for the DLang parser
-    tests/         Unit test and mock files.
-    tools/         Tools required by the build system.
+    source/        The source code for the library
+    tests/         Unit tests and mock files.
     Doxyfile       Doxygen documentation generator configuration.
     LICENSE.md     The software license notification.
-    premake4.lua   A premake4 configuration file for generating build scripts.
     README.md      You're reading this file right now!
 
