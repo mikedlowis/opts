@@ -14,7 +14,7 @@ typedef struct entry_t {
     struct entry_t* next;
 } entry_t;
 
-typedef enum { LONG, SHORT } OptionType_T;
+typedef enum { LONG, SHORT } opt_type_t;
 
 typedef struct {
     unsigned int line_idx;
@@ -23,17 +23,17 @@ typedef struct {
     char** arg_vect;
     int current;
     opts_cfg_t* options;
-} StreamContext_T;
+} stream_ctx_t;
 
-static void opts_parse_short_option( StreamContext_T* ctx );
-static void opts_parse_long_option( StreamContext_T* ctx );
-static char* opts_parse_optarg(StreamContext_T* ctx, char* opt_name);
-static void opts_parse_argument( StreamContext_T* ctx );
+static void opts_parse_short_option( stream_ctx_t* ctx );
+static void opts_parse_long_option( stream_ctx_t* ctx );
+static char* opts_parse_optarg(stream_ctx_t* ctx, char* opt_name);
+static void opts_parse_argument( stream_ctx_t* ctx );
 static void opts_parse_error(const char* msg, char* opt_name);
-static opts_cfg_t* opts_get_option_config( opts_cfg_t* opts, OptionType_T typ, char* name );
-static char* opts_next_token( StreamContext_T* ctx );
-static void opts_consume_ws( StreamContext_T* ctx );
-static char opts_next_char( StreamContext_T* ctx );
+static opts_cfg_t* opts_get_option_config( opts_cfg_t* opts, opt_type_t typ, char* name );
+static char* opts_next_token( stream_ctx_t* ctx );
+static void opts_consume_ws( stream_ctx_t* ctx );
+static char opts_next_char( stream_ctx_t* ctx );
 static char* opts_append_char( char* str, char ch );
 static char* strclone(const char* p_old);
 static void opts_add_option(char* name, char* tag, char* arg);
@@ -46,7 +46,7 @@ static opts_err_cbfn_t Error_Callback = &opts_parse_error;
 
 void opts_parse(opts_cfg_t* opts, opts_err_cbfn_t err_cb, int argc, char** argv) {
     /* Setup the stream */
-    StreamContext_T ctx;
+    stream_ctx_t ctx;
     ctx.line_idx  = 0;
     ctx.col_idx   = -1;
     ctx.arg_count = argc-1;
@@ -104,7 +104,7 @@ void opts_reset(void) {
     }
 }
 
-static void opts_parse_short_option( StreamContext_T* ctx ) {
+static void opts_parse_short_option( stream_ctx_t* ctx ) {
     char opt[2] = { ctx->current, '\0' };
     char* opt_name = strclone(opt);
     opts_cfg_t* config = opts_get_option_config( ctx->options, SHORT, opt_name );
@@ -121,7 +121,7 @@ static void opts_parse_short_option( StreamContext_T* ctx ) {
     }
 }
 
-static void opts_parse_long_option( StreamContext_T* ctx ) {
+static void opts_parse_long_option( stream_ctx_t* ctx ) {
     char* opt_name = opts_next_token( ctx );
     opts_cfg_t* config = opts_get_option_config( ctx->options, LONG, opt_name );
     if (config != NULL) {
@@ -134,7 +134,7 @@ static void opts_parse_long_option( StreamContext_T* ctx ) {
     }
 }
 
-static char* opts_parse_optarg(StreamContext_T* ctx, char* opt_name) {
+static char* opts_parse_optarg(stream_ctx_t* ctx, char* opt_name) {
     opts_consume_ws( ctx );
     if (('-' == ctx->current) || (EOF == ctx->current))
         Error_Callback("Expected an argument, none received", opt_name);
@@ -147,17 +147,17 @@ static void opts_parse_error(const char* msg, char* opt_name) {
     exit(1);
 }
 
-static void opts_parse_argument( StreamContext_T* ctx ) {
+static void opts_parse_argument( stream_ctx_t* ctx ) {
     char* arg_val = opts_next_token( ctx );
     if (NULL != arg_val)
         opts_add_argument(arg_val);
 }
 
-static opts_cfg_t* opts_get_option_config( opts_cfg_t* opts, OptionType_T type, char* name ) {
+static opts_cfg_t* opts_get_option_config( opts_cfg_t* opts, opt_type_t type, char* name ) {
     opts_cfg_t* cfg = NULL;
     int i = 0;
     while( opts[i].name != NULL ) {
-        OptionType_T curr_type = (strlen(opts[i].name) > 1) ? LONG : SHORT;
+        opt_type_t curr_type = (strlen(opts[i].name) > 1) ? LONG : SHORT;
         if ((curr_type == type) && (0 == strcmp(opts[i].name, name))) {
             cfg = &(opts[i]);
             break;
@@ -167,7 +167,7 @@ static opts_cfg_t* opts_get_option_config( opts_cfg_t* opts, OptionType_T type, 
     return cfg;
 }
 
-static char* opts_next_token( StreamContext_T* ctx ) {
+static char* opts_next_token( stream_ctx_t* ctx ) {
     char* tok = NULL;
 
     opts_consume_ws( ctx );
@@ -186,12 +186,12 @@ static char* opts_next_token( StreamContext_T* ctx ) {
     return tok;
 }
 
-static void opts_consume_ws( StreamContext_T* ctx ) {
+static void opts_consume_ws( stream_ctx_t* ctx ) {
     while (' ' == ctx->current)
         (void)opts_next_char( ctx );
 }
 
-static char opts_next_char( StreamContext_T* ctx ) {
+static char opts_next_char( stream_ctx_t* ctx ) {
     char current = EOF;
     ctx->current = EOF;
 
