@@ -3,6 +3,8 @@
 #include <string.h>
 #include "opts.h"
 
+/* Type and Function Declarations
+ *****************************************************************************/
 typedef struct {
     char* name;
     char* tag;
@@ -39,11 +41,15 @@ static char* strclone(const char* p_old);
 static void opts_add_option(char* name, char* tag, char* arg);
 static void opts_add_argument(char* arg);
 
+/* Global State
+ *****************************************************************************/
 static const char* Program_Name = NULL;
 static entry_t* Options   = NULL;
 static entry_t* Arguments = NULL;
 static opts_err_cbfn_t Error_Callback = &opts_parse_error;
 
+/* The Options Parser
+ *****************************************************************************/
 void opts_parse(opts_cfg_t* opts, opts_err_cbfn_t err_cb, int argc, char** argv) {
     /* Setup the stream */
     stream_ctx_t ctx;
@@ -77,30 +83,9 @@ void opts_parse(opts_cfg_t* opts, opts_err_cbfn_t err_cb, int argc, char** argv)
                 opts_parse_short_option( &ctx );
             }
         } else {
+            /* It's not an option so add it to the "extra" bucket */
             opts_parse_argument( &ctx );
         }
-    }
-}
-
-void opts_reset(void) {
-    while (Options != NULL) {
-        entry_t* entry = Options;
-        option_t* opt  = (option_t*)entry->value;
-        Options = entry->next;
-        free(opt->name);
-        free(opt->tag);
-        if(opt->name != opt->value)
-            free(opt->value);
-        free(opt);
-        free(entry);
-    }
-
-    while (Arguments != NULL) {
-        entry_t* entry = Arguments;
-        char* arg  = (char*)entry->value;
-        Arguments = entry->next;
-        free(arg);
-        free(entry);
     }
 }
 
@@ -111,8 +96,10 @@ static void opts_parse_short_option( stream_ctx_t* ctx ) {
     if (config != NULL) {
         char* opt_arg = NULL;
         (void)opts_next_char( ctx );
+        /* Check if the flag has an argument */
         if (config->has_arg)
             opt_arg = opts_parse_optarg( ctx, opt_name );
+        /* If there are more flags in the flag group */
         else if ((' ' != ctx->current) && (EOF != ctx->current))
             opts_parse_short_option( ctx );
         opts_add_option( opt_name, config->tag, opt_arg );
@@ -126,8 +113,10 @@ static void opts_parse_long_option( stream_ctx_t* ctx ) {
     opts_cfg_t* config = opts_get_option_config( ctx->options, LONG, opt_name );
     if (config != NULL) {
         char* opt_arg = NULL;
+        /* Parse the argument if one is expected */
         if (config->has_arg)
             opt_arg = opts_parse_optarg( ctx, opt_name );
+        /* Store off the option value */
         opts_add_option( opt_name, config->tag, opt_arg );
     } else {
         Error_Callback("Unknown Option", opt_name);
@@ -223,16 +212,6 @@ static char* opts_append_char( char* str, char ch ) {
     return str;
 }
 
-static char* strclone(const char* p_old) {
-    size_t length = strlen(p_old);
-    char* p_str = (char*)malloc(length+1);
-    memcpy(p_str, p_old, length);
-    p_str[length] = '\0';
-    return p_str;
-}
-
-/*****************************************************************************/
-
 static void opts_add_option(char* name, char* tag, char* arg) {
     option_t* option = (option_t*)malloc(sizeof(option_t));
     option->name     = name;
@@ -251,9 +230,43 @@ static void opts_add_argument(char* arg_val) {
     Arguments      = entry;
 }
 
-/*****************************************************************************/
+/* Parser Cleanup
+ *****************************************************************************/
+void opts_reset(void) {
+    while (Options != NULL) {
+        entry_t* entry = Options;
+        option_t* opt  = (option_t*)entry->value;
+        Options = entry->next;
+        free(opt->name);
+        free(opt->tag);
+        if(opt->name != opt->value)
+            free(opt->value);
+        free(opt);
+        free(entry);
+    }
 
-option_t* find_option(const char* name, const char* tag) {
+    while (Arguments != NULL) {
+        entry_t* entry = Arguments;
+        char* arg  = (char*)entry->value;
+        Arguments = entry->next;
+        free(arg);
+        free(entry);
+    }
+}
+
+/* Utility Functions
+ *****************************************************************************/
+static char* strclone(const char* p_old) {
+    size_t length = strlen(p_old);
+    char* p_str = (char*)malloc(length+1);
+    memcpy(p_str, p_old, length);
+    p_str[length] = '\0';
+    return p_str;
+}
+
+/* Query Functions
+ *****************************************************************************/
+static option_t* find_option(const char* name, const char* tag) {
     option_t* p_opt = NULL;
     entry_t* current = Options;
     while (current != NULL) {
@@ -319,8 +332,8 @@ const char* opts_prog_name(void) {
     return Program_Name;
 }
 
-/*****************************************************************************/
-
+/* Help Message Printing
+ *****************************************************************************/
 static int opts_calc_padding(opts_cfg_t* opts) {
     bool opts_have_args = false;
     size_t sz = 0;
