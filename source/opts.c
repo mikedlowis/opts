@@ -25,27 +25,26 @@ typedef struct {
     opts_cfg_t* options;
 } StreamContext_T;
 
-static const char* Program_Name = NULL;
-static entry_t* Options   = NULL;
-static entry_t* Arguments = NULL;
-
 static void opts_parse_short_option( StreamContext_T* ctx );
 static void opts_parse_long_option( StreamContext_T* ctx );
 static char* opts_parse_optarg(StreamContext_T* ctx, char* opt_name);
 static void opts_parse_argument( StreamContext_T* ctx );
 static void opts_parse_error(const char* msg, char* opt_name);
-
 static opts_cfg_t* opts_get_option_config( opts_cfg_t* opts, OptionType_T typ, char* name );
 static char* opts_next_token( StreamContext_T* ctx );
 static void opts_consume_ws( StreamContext_T* ctx );
 static char opts_next_char( StreamContext_T* ctx );
 static char* opts_append_char( char* str, char ch );
 static char* strclone(const char* p_old);
-
 static void opts_add_option(char* name, char* tag, char* arg);
 static void opts_add_argument(char* arg);
 
-void opts_parse( opts_cfg_t* opts, int argc, char** argv ) {
+static const char* Program_Name = NULL;
+static entry_t* Options   = NULL;
+static entry_t* Arguments = NULL;
+static opts_err_cbfn_t Error_Callback = &opts_parse_error;
+
+void opts_parse(opts_cfg_t* opts, opts_err_cbfn_t err_cb, int argc, char** argv) {
     /* Setup the stream */
     StreamContext_T ctx;
     ctx.line_idx  = 0;
@@ -54,6 +53,10 @@ void opts_parse( opts_cfg_t* opts, int argc, char** argv ) {
     ctx.arg_vect  = &argv[1];
     ctx.options   = opts;
     (void)opts_next_char( &ctx ); /* Loads up the first char */
+
+    /* Record the error handler if one was provided */
+    if (NULL != err_cb)
+        Error_Callback = err_cb;
 
     /* Record the program name */
     Program_Name = argv[0];
@@ -114,7 +117,7 @@ static void opts_parse_short_option( StreamContext_T* ctx ) {
             opts_parse_short_option( ctx );
         opts_add_option( opt_name, config->tag, opt_arg );
     } else {
-        opts_parse_error("Unknown Option", opt_name);
+        Error_Callback("Unknown Option", opt_name);
     }
 }
 
@@ -127,14 +130,14 @@ static void opts_parse_long_option( StreamContext_T* ctx ) {
             opt_arg = opts_parse_optarg( ctx, opt_name );
         opts_add_option( opt_name, config->tag, opt_arg );
     } else {
-        opts_parse_error("Unknown Option", opt_name);
+        Error_Callback("Unknown Option", opt_name);
     }
 }
 
 static char* opts_parse_optarg(StreamContext_T* ctx, char* opt_name) {
     opts_consume_ws( ctx );
     if (('-' == ctx->current) || (EOF == ctx->current))
-        opts_parse_error("Expected an argument, none received", opt_name);
+        Error_Callback("Expected an argument, none received", opt_name);
     return opts_next_token( ctx );
 }
 
@@ -350,3 +353,4 @@ void opts_print_help(FILE* ofile, opts_cfg_t* opts) {
     free(buffer);
     exit(1);
 }
+
