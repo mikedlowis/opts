@@ -43,7 +43,7 @@ void exit(int code)
 static void User_Error_Cb(const char* msg, char* opt_name) {
     (void)msg;
     (void)opt_name;
-    exit(1);
+    exit(2);
 }
 
 void test_setup(void) {}
