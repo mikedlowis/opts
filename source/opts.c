@@ -133,6 +133,7 @@ static char* opts_parse_optarg(stream_ctx_t* ctx, char* opt_name) {
 static void opts_parse_error(const char* msg, char* opt_name) {
     fprintf(stderr, "Option '%s' : %s\n", opt_name, msg);
     free(opt_name);
+    opts_reset();
     exit(1);
 }
 
