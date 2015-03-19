@@ -364,6 +364,5 @@ void opts_print_help(FILE* ofile, opts_cfg_t* opts) {
         opts++;
     }
     free(buffer);
-    exit(1);
 }
 
