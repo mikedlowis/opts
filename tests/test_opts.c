@@ -39,6 +39,13 @@ void exit(int code)
     longjmp( Exit_Point, code);
 }
 
+
+static void User_Error_Cb(const char* msg, char* opt_name) {
+    (void)msg;
+    (void)opt_name;
+    exit(2);
+}
+
 void test_setup(void) {}
 
 //-----------------------------------------------------------------------------
@@ -53,7 +60,7 @@ TEST_SUITE(Opts) {
         char* args[] = { "prog", (char*)"--foo" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 2, args );
+            opts_parse( Options_Config, NULL, 2, args );
             CHECK(opts_is_set("foo", NULL));
         }
         opts_reset();
@@ -65,7 +72,7 @@ TEST_SUITE(Opts) {
 
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 3, args );
+            opts_parse( Options_Config, NULL, 3, args );
             CHECK(opts_is_set("bar", NULL));
             CHECK(0 == strcmp("baz", opts_get_value("bar", NULL)));
         }
@@ -77,7 +84,7 @@ TEST_SUITE(Opts) {
         char* args[] = { "prog", (char*)"--bar=baz" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 2, args );
+            opts_parse( Options_Config, NULL, 2, args );
             CHECK(opts_is_set("bar", NULL));
             CHECK(0 == strcmp("baz", opts_get_value("bar", NULL)));
         }
@@ -91,7 +98,7 @@ TEST_SUITE(Opts) {
 
         exit_code = setjmp( Exit_Point );
         if( 0 == exit_code ) {
-            opts_parse( Options_Config, 2, args );
+            opts_parse( Options_Config, NULL, 2, args );
             // If we fail to call exit then this breaks our test
             CHECK( false );
         } else {
@@ -107,7 +114,7 @@ TEST_SUITE(Opts) {
 
         exit_code = setjmp( Exit_Point );
         if( 0 == exit_code ) {
-            opts_parse( Options_Config, 2, args );
+            opts_parse( Options_Config, NULL, 2, args );
             // If we fail to call exit then this breaks our test
             CHECK( false );
         } else {
@@ -123,7 +130,7 @@ TEST_SUITE(Opts) {
 
         exit_code = setjmp( Exit_Point );
         if( 0 == exit_code ) {
-            opts_parse( Options_Config, 2, args );
+            opts_parse( Options_Config, NULL, 2, args );
             // If we fail to call exit then this breaks our test
             CHECK( false );
         } else {
@@ -137,7 +144,7 @@ TEST_SUITE(Opts) {
         char* args[] = { "prog", (char*)"-a" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 2, args );
+            opts_parse( Options_Config, NULL, 2, args );
             CHECK(opts_is_set("a", NULL));
         }
         opts_reset();
@@ -148,7 +155,7 @@ TEST_SUITE(Opts) {
         char* args[] = { "prog", (char*)"-ac" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 2, args );
+            opts_parse( Options_Config, NULL, 2, args );
             CHECK(opts_is_set("a", NULL));
             CHECK(opts_is_set("c", NULL));
         }
@@ -160,7 +167,7 @@ TEST_SUITE(Opts) {
         char* args[] = { "prog", (char*)"-bbaz" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 2, args );
+            opts_parse( Options_Config, NULL, 2, args );
             CHECK(opts_is_set("b", NULL));
             CHECK(0 == strcmp("baz", opts_get_value("b", NULL)));
         }
@@ -172,7 +179,7 @@ TEST_SUITE(Opts) {
         char* args[] = { "prog", (char*)"-b", "baz" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 3, args );
+            opts_parse( Options_Config, NULL, 3, args );
             CHECK(opts_is_set("b", NULL));
             CHECK(0 == strcmp("baz", opts_get_value("b", NULL)));
         }
@@ -184,7 +191,7 @@ TEST_SUITE(Opts) {
         char* args[] = { "prog", (char*)"-b=baz" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 2, args );
+            opts_parse( Options_Config, NULL, 2, args );
             CHECK(opts_is_set("b", NULL));
             CHECK(0 == strcmp("baz", opts_get_value("b", NULL)));
         }
@@ -199,7 +206,7 @@ TEST_SUITE(Opts) {
 
         exit_code = setjmp( Exit_Point );
         if( 0 == exit_code ) {
-            opts_parse( Options_Config, 2, args );
+            opts_parse( Options_Config, NULL, 2, args );
             // If we fail to call exit then this breaks our test
             CHECK( false );
         } else {
@@ -215,7 +222,7 @@ TEST_SUITE(Opts) {
 
         exit_code = setjmp( Exit_Point );
         if( 0 == exit_code ) {
-            opts_parse( Options_Config, 2, args );
+            opts_parse( Options_Config, NULL, 2, args );
             // If we fail to call exit then this breaks our test
             CHECK( false );
         } else {
@@ -231,7 +238,7 @@ TEST_SUITE(Opts) {
 
         exit_code = setjmp( Exit_Point );
         if( 0 == exit_code ) {
-            opts_parse( Options_Config, 2, args );
+            opts_parse( Options_Config, NULL, 2, args );
             // If we fail to call exit then this breaks our test
             CHECK( false );
         } else {
@@ -246,7 +253,7 @@ TEST_SUITE(Opts) {
 
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 2, args );
+            opts_parse( Options_Config, NULL, 2, args );
             const char** args = opts_arguments();
             CHECK(0 == strcmp("baz1", args[0]));
             CHECK(NULL == args[1]);
@@ -261,7 +268,7 @@ TEST_SUITE(Opts) {
 
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 3, args );
+            opts_parse( Options_Config, NULL, 3, args );
             const char** args = opts_arguments();
             CHECK(0 == strcmp("baz2", args[0]));
             CHECK(0 == strcmp("baz1", args[1]));
@@ -271,12 +278,28 @@ TEST_SUITE(Opts) {
         opts_reset();
     }
 
+    TEST(Verify_ParseOptions_Calls_the_user_defined_error_handler_if_provided)
+    {
+        int exit_code = 0;
+        char* args[] = { "prog", (char*)"-b" };
+
+        exit_code = setjmp( Exit_Point );
+        if( 0 == exit_code ) {
+            opts_parse( Options_Config, User_Error_Cb, 2, args );
+            // If we fail to call exit then this breaks our test
+            CHECK( false );
+        } else {
+            CHECK( 2 == exit_code );
+        }
+        opts_reset();
+    }
+
     TEST(Verify_Select_returns_the_matching_option_by_name)
     {
         char* args[] = { "prog", "-a", "--foo", "-c" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 4, args );
+            opts_parse( Options_Config, NULL, 4, args );
             const char** opts = opts_select("c", NULL);
             CHECK(0 == strcmp("c", opts[0]));
             CHECK(NULL == opts[1]);
@@ -290,7 +313,7 @@ TEST_SUITE(Opts) {
         char* args[] = { "prog", "-a", "--foo", "-c" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 4, args );
+            opts_parse( Options_Config, NULL, 4, args );
             const char** opts = opts_select(NULL, "test_c");
             CHECK(0 == strcmp("c", opts[0]));
             CHECK(NULL == opts[1]);
@@ -304,7 +327,7 @@ TEST_SUITE(Opts) {
         char* args[] = { "prog", "-a", "--foo", "-c", "--baz" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 5, args );
+            opts_parse( Options_Config, NULL, 5, args );
             const char** opts = opts_select("baz", "opttag");
             CHECK(0 == strcmp("baz", opts[0]));
             CHECK(NULL == opts[1]);
@@ -318,7 +341,7 @@ TEST_SUITE(Opts) {
         char* args[] = { "prog", "-a", "--foo", "-c", "--baz" };
         CHECK_DOES_NOT_EXIT()
         {
-            opts_parse( Options_Config, 5, args );
+            opts_parse( Options_Config, NULL, 5, args );
             const char** opts = opts_select(NULL, "opttag");
             CHECK(0 == strcmp("baz", opts[0]));
             CHECK(0 == strcmp("foo", opts[1]));

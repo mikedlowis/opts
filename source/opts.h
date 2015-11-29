@@ -66,6 +66,8 @@ typedef struct {
     char* desc;
 } opts_cfg_t;
 
+typedef void (*opts_err_cbfn_t)(const char* msg, char* opt_name);
+
 /**
  * Parse the command line options using the provided option definition list.
  *
@@ -73,7 +75,7 @@ typedef struct {
  * @param argc The number of arguments in the vector
  * @param argv The vector of command line arguments
  */
-void opts_parse(opts_cfg_t* opts, int argc, char** argv);
+void opts_parse(opts_cfg_t* opts, opts_err_cbfn_t err_cb, int argc, char** argv);
 
 /**
  * Resets the global state back to defaults. This includes freeing any
