@@ -11,7 +11,7 @@ AR = ar
 # flags
 INCS      = -Isource/ -Itests/
 CPPFLAGS  = -D_XOPEN_SOURCE=700
-CFLAGS   += ${INCS} ${CPPFLAGS}
+CFLAGS   += -g ${INCS} ${CPPFLAGS}
 LDFLAGS  += ${LIBS}
 ARFLAGS   = rcs
 
@@ -20,7 +20,7 @@ ARFLAGS   = rcs
 #------------------------------------------------------------------------------
 SRCS = source/opts.c
 OBJS = ${SRCS:.c=.o}
-TEST_SRCS = tests/atf.c tests/main.c tests/test_opts.c
+TEST_SRCS = tests/atf.c tests/main.c tests/test_opts.c tests/test_opt.c
 TEST_OBJS = ${TEST_SRCS:.c=.o}
 
 all: options libopts.a testopts
