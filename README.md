@@ -54,27 +54,13 @@ Requirements For Building
 ----------------------------------------------
 This project requires the following external tools to build successfully:
 
-* Ruby
-* Bundler
-* GCC or Clang
+* A POSIX compliant 'make' utility
+* A C99 capable C compiler
 
 Build Instructions
 ----------------------------------------------
-This project can be built by executing the following commands:
+This project can be built by executing the following command:
 
-    bundle install
-    bundle exec rake
+    make
 
-After those two commands execute you should be left with a static library that
-you can use as you please.
-
-Project Files and Directories
-----------------------------------------------
-
-    build/         This is the directory where all output files will be placed.
-    source/        The source code for the library
-    tests/         Unit tests and mock files.
-    Doxyfile       Doxygen documentation generator configuration.
-    LICENSE.md     The software license notification.
-    README.md      You're reading this file right now!
-
+You should be left with a static library that you can use as you please.
