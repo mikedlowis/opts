@@ -3,6 +3,9 @@
 #------------------------------------------------------------------------------
 # Update these variables according to your requirements.
 
+# version
+VERSION = 0.0.1
+
 # tools
 CC = c99
 LD = ${CC}
@@ -22,14 +25,15 @@ ARCHIVE = @echo AR $@; ${AR} ${ARFLAGS} $@ $^
 CLEAN   = @rm -f
 
 #------------------------------------------------------------------------------
-# Build Targets and Rules
+# Build-Specific Macros
 #------------------------------------------------------------------------------
+# Library macros and rules
 LIBNAME = opts
 LIB  = lib${LIBNAME}.a
-
 DEPS = ${OBJS:.o=.d}
 OBJS = source/opts.o
 
+# Test binary macros
 TEST_BIN  = test${LIBNAME}
 TEST_DEPS = ${TEST_OBJS:.o=.d}
 TEST_OBJS = tests/atf.o       \
@@ -37,8 +41,19 @@ TEST_OBJS = tests/atf.o       \
             tests/test_opts.o \
             tests/test_opt.o
 
-# load user-specific settings
+# Distribution dir and tarball settings
+DISTDIR   = ${LIBNAME}-${VERSION}
+DISTTAR   = ${DISTDIR}.tar
+DISTGZ    = ${DISTTAR}.gz
+DISTFILES = config.mk LICENSE.md Makefile README.md source tests
+
+# load user-specific settings if they exist
 -include config.mk
+
+#------------------------------------------------------------------------------
+# Phony Targets
+#------------------------------------------------------------------------------
+.PHONY: all options tests dist
 
 all: options ${LIB} tests
 
@@ -52,26 +67,36 @@ options:
 	@echo "  ARFLAGS  = ${ARFLAGS}"
 
 tests: ${TEST_BIN}
+	@./${TEST_BIN}
 
-${LIB}: ${OBJS}
-	${ARCHIVE}
-
-${TEST_BIN}: ${TEST_OBJS} ${LIB}
-	${LINK}
-	@./$@
-
-.c.o:
-	${COMPILE}
+dist: clean
+	@echo DIST ${DISTGZ}
+	@mkdir -p ${DISTDIR}
+	@cp -R ${DISTFILES} ${DISTDIR}
+	@tar -cf ${DISTTAR} ${DISTDIR}
+	@gzip ${DISTTAR}
+	@rm -rf ${DISTDIR}
 
 clean:
 	${CLEAN} ${LIB} ${TEST_BIN} ${OBJS} ${TEST_OBJS}
 	${CLEAN} ${OBJS:.o=.gcno} ${OBJS:.o=.gcda}
 	${CLEAN} ${TEST_OBJS:.o=.gcno} ${TEST_OBJS:.o=.gcda}
 	${CLEAN} ${DEPS} ${TEST_DEPS}
+	${CLEAN} ${DISTTAR} ${DISTGZ}
 
-# load dependency files
+#------------------------------------------------------------------------------
+# Target-Specific Rules
+#------------------------------------------------------------------------------
+.c.o:
+	${COMPILE}
+
+${LIB}: ${OBJS}
+	${ARCHIVE}
+
+${TEST_BIN}: ${TEST_OBJS} ${LIB}
+	${LINK}
+
+# load dependency files if they exist
 -include ${DEPS}
 -include ${TEST_DEPS}
-
-.PHONY: all options tests
 
