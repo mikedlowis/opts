@@ -3,8 +3,13 @@ tags
 cscope.out
 project.vim
 *.o
+*.d
+*.gcno
+*.gcda
 *.exe
 *.a
 *.lib
 *~
 *.d
+config.mk
+testopts

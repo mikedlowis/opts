@@ -11,19 +11,36 @@ AR = ar
 # flags
 INCS      = -Isource/ -Itests/
 CPPFLAGS  = -D_XOPEN_SOURCE=700
-CFLAGS   += -g ${INCS} ${CPPFLAGS}
+CFLAGS   += ${INCS} ${CPPFLAGS}
 LDFLAGS  += ${LIBS}
 ARFLAGS   = rcs
+
+# commands
+COMPILE = @echo CC $@; ${CC} ${CFLAGS} -c -o $@ $<
+LINK    = @echo LD $@; ${LD} -o $@ $^ ${LDFLAGS}
+ARCHIVE = @echo AR $@; ${AR} ${ARFLAGS} $@ $^
+CLEAN   = @rm -f
 
 #------------------------------------------------------------------------------
 # Build Targets and Rules
 #------------------------------------------------------------------------------
-SRCS = source/opts.c
-OBJS = ${SRCS:.c=.o}
-TEST_SRCS = tests/atf.c tests/main.c tests/test_opts.c tests/test_opt.c
-TEST_OBJS = ${TEST_SRCS:.c=.o}
+LIBNAME = opts
+LIB  = lib${LIBNAME}.a
 
-all: options libopts.a testopts
+DEPS = ${OBJS:.o=.d}
+OBJS = source/opts.o
+
+TEST_BIN  = test${LIBNAME}
+TEST_DEPS = ${TEST_OBJS:.o=.d}
+TEST_OBJS = tests/atf.o       \
+            tests/main.o      \
+            tests/test_opts.o \
+            tests/test_opt.o
+
+# load user-specific settings
+-include config.mk
+
+all: options ${LIB} tests
 
 options:
 	@echo "Toolchain Configuration:"
@@ -34,21 +51,27 @@ options:
 	@echo "  AR       = ${AR}"
 	@echo "  ARFLAGS  = ${ARFLAGS}"
 
-libopts.a: ${OBJS}
-	@echo AR $@
-	@${AR} ${ARFLAGS} $@ ${OBJS}
+tests: ${TEST_BIN}
 
-testopts: ${TEST_OBJS} libopts.a
-	@echo LD $@
-	@${LD} -o $@ ${TEST_OBJS} libopts.a ${LDFLAGS}
-	-./$@
+${LIB}: ${OBJS}
+	${ARCHIVE}
+
+${TEST_BIN}: ${TEST_OBJS} ${LIB}
+	${LINK}
+	@./$@
 
 .c.o:
-	@echo CC $<
-	@${CC} ${CFLAGS} -c -o $@ $<
+	${COMPILE}
 
 clean:
-	@rm -f libopts.a testopts ${OBJS} ${TEST_OBJS}
+	${CLEAN} ${LIB} ${TEST_BIN} ${OBJS} ${TEST_OBJS}
+	${CLEAN} ${OBJS:.o=.gcno} ${OBJS:.o=.gcda}
+	${CLEAN} ${TEST_OBJS:.o=.gcno} ${TEST_OBJS:.o=.gcda}
+	${CLEAN} ${DEPS} ${TEST_DEPS}
 
-.PHONY: all options
+# load dependency files
+-include ${DEPS}
+-include ${TEST_DEPS}
+
+.PHONY: all options tests
 
